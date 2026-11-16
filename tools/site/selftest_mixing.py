@@ -13,7 +13,6 @@ Exit 0 when the clean pages pass and every kind of mixing is caught; 1 otherwise
 """
 
 import argparse
-import json
 import shutil
 import sys
 import tempfile
@@ -79,8 +78,7 @@ def main():
     args = ap.parse_args()
     built = Path(args.build_dir)
     S = build.compute(argparse.Namespace(state=args.state))
-    sc = json.loads((built / "data/showcase.json").read_text())
-    S.update(hash="selftest", decision_files=0, image=None, risk_cards={}, showcase=sc or None)
+    S.update(hash="selftest", decision_files=0, decision_contexts=[], image=None, risk_cards={})
     result = {}
     with tempfile.TemporaryDirectory() as tmp:
         for label in ("clean", "mixed"):

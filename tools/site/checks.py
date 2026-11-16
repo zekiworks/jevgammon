@@ -6,14 +6,13 @@
    (decimals, percentages, thousands separators, signs). Dates and times are taken out first.
 2. Counts add up: per league, setup decisions sum to the league's decisions and match the snapshot; invalid +
    valid = decisions; risk cells and phase cells sum to the scored decisions; standings played = 2 x matches
-   finished; the v1 set is setups x positions; exported decisions match the engine-scored decisions; the B6 marks
-   on Every decision match the 2x2 counts; a late entry's decisions match the snapshot, its risk and phase cells
+   finished; the v1 set is setups x positions; a late entry's decisions match the snapshot, its risk and phase cells
    add up, and it is in no league's setups or standings.
 3. No mixing: no table holds rows of two datasets, except the home page's All leagues tables (data-dataset="all":
    league rows only, the All leagues note in their block); v1 rows only inside an Earlier-version block; every block
    of a league that has not finished says "Provisional: league still running".
 4. No private addresses or credentials (B7): hostnames, IPs, ports, server paths, keys, tokens, request headers,
-   the other benchmark's name, in any output file including the decompressed decision files. One exception: the
+   the other benchmark's name, in any output file including decompressed .gz files. One exception: the
    suite strip at the top of a page, exactly as published (common.SUITE_BAR), once per HTML page (bus #2270, #2287,
    #2310); data files, decompressed .gz files and other text get the complete scan. selftest_suite_bar.py tests it.
 5. Every relative link resolves; ids are unique per page and every #anchor exists.
@@ -26,6 +25,9 @@
 8. The "Did they improve?" page (improve_page.py): the pre-registered texts, one row per plan model in the plan's sort
    order, no Yes/No before a model's verdict gate, every shown score recomputed from the data file's tests, no results
    block in pre-registration-only mode, and no test position in the page or its data file (check_improve).
+9. No published questions (check_no_questions): no file, the frozen results/ and archive/ copies included, holds a
+   decision record (a board with its plays or best play) or draws a board; decisions/ holds only its note page and
+   the shared rules texts.
 """
 
 import gzip
@@ -175,9 +177,6 @@ def allowed_numbers(out: Path, S: dict) -> set:
     import story
     for p in (story.LEARN_DECISION, story.LEARN_PLAN):
         _collect(json.loads(p.read_text()), nums, texts)
-    idx = out / "decisions/index.json"
-    if idx.exists():
-        _collect(json.loads(idx.read_text()), nums, texts)
     for p in CONTENT.rglob("*"):
         if p.suffix == ".json":
             _collect(json.loads(p.read_text()), nums, texts)
@@ -263,35 +262,6 @@ def check_counts(S: dict) -> list[str]:
     if v1["decisions"] != len(v1["setups"]) * v1["positions"] or any(
             s["quality"]["decisions"] != v1["positions"] for s in v1["setups"].values()):
         bad.append("v1 set: decisions != setups x positions")
-    exp = S.get("decisions_export") or {}
-    for lg in S["leagues"]:
-        got = exp.get(lg["dataset"], {})
-        for name, s in lg["setups"].items():
-            want = s["quality"]["engine_scored"]
-            have = got.get(name, {}).get("decisions", 0)
-            if want != have:
-                bad.append(f"{lg['dataset']}/{name}: {want} engine-scored decisions, {have} exported")
-    got = exp.get("v1-set", {})
-    for name in v1["setups"]:
-        if got.get(name, {}).get("decisions") != v1["positions"]:
-            bad.append(f"v1-set/{name}: exported {got.get(name, {}).get('decisions')} of {v1['positions']}")
-    # Every decision's B6.1 marks (Every decision filters) must match the analyses' counts at the main margin.
-    for ds, setups in sets:
-        for name, s in setups.items():
-            r, rc = s["risk"]["main"], exp.get(ds, {}).get(name, {}).get("risk")
-            if rc is None:
-                continue
-            want = (r["risk_pays"], r["safety_pays"], r["no_trade_off"], {k: v for k, v in r["calls"].items()})
-            have = (rc["risk"], rc["safety"], rc["none"], rc["calls"])
-            if want != have:
-                bad.append(f"{ds}/{name}: exported risk marks {have} != analysis {want}")
-            # Close choices (Method spec 2026-10-24 §9): the Every decision marks match the analysis.
-            cc = s.get("close")
-            if cc is not None and "close" in rc:
-                want_cc = (cc["close"]["n"], cc["eligible"] - cc["close"]["n"]) if not cc["na"] else (0, 0)
-                have_cc = (rc["close"]["close"], rc["close"]["other"])
-                if want_cc != have_cc:
-                    bad.append(f"{ds}/{name}: exported close-choice marks {have_cc} != analysis {want_cc}")
     return bad
 
 
@@ -336,9 +306,6 @@ def check_mixing(page: Path, root: Node, S: dict) -> list[str]:
 
 # --- 5. Links and ids ---------------------------------------------------------------------------------------
 
-# Pages whose anchors are rendered in the browser, not in the built file: the decisions viewer (decisions.js lists the
-# decisions its address asks for, ids d<n> included), the current one and every archived copy (results/<hash>/decisions/).
-DYNAMIC_ANCHORS = ("decisions/index.html",)
 # Frozen archive copies (results/<hash>/, archive/<date>/): published once and never rebuilt, so their old in-page
 # links stay as they were; the anchor check covers the live pages.
 FROZEN_PREFIXES = ("results/", "archive/")
@@ -389,7 +356,6 @@ def check_links(page: Path, root: Node, out: Path, anchors: bool = True) -> list
             if not target.exists():
                 bad.append(f"{page}: link {v} does not resolve")
             elif (frag and target.suffix == ".html" and target.is_relative_to(out.resolve())
-                  and not str(target.relative_to(out.resolve())).endswith(DYNAMIC_ANCHORS)
                   and not str(target.relative_to(out.resolve())).startswith(FROZEN_PREFIXES)
                   and frag not in page_ids(target, out.resolve())):
                 bad.append(f"{page}: link {v}: no id #{frag} on {target.relative_to(out.resolve())}")
@@ -1042,7 +1008,39 @@ def run(S: dict, out: Path) -> list[str]:
     failures += check_model_classes(out)
     failures += check_bench_scores(S, out)
     failures += check_highlight_cards(out)
+    failures += check_no_questions(out)
     return failures
+
+
+def _items(x) -> bool:
+    """Whether a JSON value holds a decision record: a board together with its plays, the best or the chosen play."""
+    if isinstance(x, dict):
+        if "board" in x and any(k in x for k in ("best", "chosen", "plays")):
+            return True
+        return any(_items(v) for v in x.values())
+    return isinstance(x, list) and any(_items(v) for v in x)
+
+
+def check_no_questions(out: Path) -> list[str]:
+    """No bench publishes its questions (Ümit via Zeki #11048, #11050): no file anywhere in the output, the frozen
+    results/ and archive/ copies included, holds a decision record (a board with its plays or the engine's best play)
+    or draws a board (board.py's SVG, class bd-frame); decisions/ holds only its note page and the shared rules texts
+    (contexts/*.txt)."""
+    bad = []
+    for p in out.rglob("*"):
+        if not p.is_file():
+            continue
+        rel = p.relative_to(out)
+        if rel.parts[0] == "decisions" and not (rel.parts[1:] == ("index.html",) or (
+                len(rel.parts) == 3 and rel.parts[1] == "contexts" and p.suffix == ".txt")):
+            bad.append(f"{rel}: decisions/ holds only index.html and contexts/*.txt")
+        if p.name.endswith((".json", ".json.gz")):
+            raw = p.read_bytes()
+            if _items(json.loads(gzip.decompress(raw) if p.suffix == ".gz" else raw)):
+                bad.append(f"{rel}: holds a decision record (a board with its plays or best play)")
+        elif p.suffix in (".html", ".js") and "bd-frame" in p.read_text(errors="replace"):
+            bad.append(f"{rel}: draws a board")
+    return bad
 
 
 def check_highlight_cards(out: Path) -> list[str]:

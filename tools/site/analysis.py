@@ -32,7 +32,6 @@ import numpy as np
 import own_cost
 import stats
 from common import EARLIER, HELD, PROVISIONAL, PUBLISHED, ROOT, RUNNING, SPEC, THRESHOLDS as T, slug
-from decisions_export import PAGE_SIZE as DECISION_PAGE
 
 sys.path.insert(0, str(ROOT / "tools"))
 from league_web import (error_rates, last_activity, league_fixtures, league_origins, league_state,  # noqa: E402
@@ -150,30 +149,12 @@ def load_leagues(snap: Path, plays_dir: Path) -> dict:
                FROM turns t JOIN games g ON g.id = t.game_id JOIN league_match_view lm ON lm.match_id = g.match_id
                WHERE lm.league_id = ? AND t.decided_by IN ('model', 'fallback')
                ORDER BY lm.label, g.id, t.turn_no""", (lid,))]
-        # Where each match's decisions sit in Every decision: per setup, scored decisions in turn order, 50 a page.
-        order = defaultdict(list)
-        for d in decisions:
-            if d["scored"]:
-                order[d["setup"]].append(d["id"])
-        first = {}
-        for ids in order.values():
-            ids.sort()
-        by_match = {}
-        for d in decisions:
-            if d["scored"]:
-                k = (d["match"], d["setup"])
-                if k not in by_match or d["id"] < by_match[k]:
-                    by_match[k] = d["id"]
-        position = {setup: {tid: i for i, tid in enumerate(ids)} for setup, ids in order.items()}
-        for (mid, setup), tid in by_match.items():
-            first[(mid, setup)] = dict(id=tid, slug=slug(setup), page=position[setup][tid] // DECISION_PAGE + 1)
         matches_list = []
         for f in fixtures:
             gw = games_won.get(f["match_id"], [0, 0]) if f["match_id"] else [0, 0]
             matches_list.append(dict(
                 matchday=f["matchday"], model1=f["model1"], model2=f["model2"], match_id=f["match_id"],
-                status=f["status"], score1=f["score1"] or 0, score2=f["score2"] or 0, games=sum(gw),
-                model1_first=first.get((f["match_id"], f["model1"])), model2_first=first.get((f["match_id"], f["model2"]))))
+                status=f["status"], score1=f["score1"] or 0, score2=f["score2"] or 0, games=sum(gw)))
         leagues.append(dict(
             matches_list=matches_list,
             id=lid, dataset=f"league-{lid}", roster=roster, names=names, table=table,

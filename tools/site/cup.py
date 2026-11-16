@@ -242,30 +242,13 @@ def knockout(path: Path) -> tuple[dict, list[dict]]:
                  played=sum(t.get("state") == "played" for t in ties), matches_total=len(ties)), matches)
 
 
-def compute(state: Path, leagues: list[dict]) -> dict:
-    """Matches (every valid finished match: v3 and the knockout), voided matches, the Cup and the knockout.
-    `leagues` (build.compute's) give each match's decision links where the site has them."""
+def compute(state: Path) -> dict:
+    """Matches (every valid finished match: v3 and the knockout), voided matches, the Cup and the knockout."""
     conn = ro(state / "snap.db")
     matches, voided = classify(conn)
     cup = hype_cup(conn, state / "plays", matches)
     conn.close()
     ko, ko_matches = knockout(state / "knockout.db")
-    links = {}
-    for lg in leagues:
-        for m in lg["matches_list"]:
-            if m["match_id"] and m["status"] == "finished":
-                links[m["match_id"]] = dict(dataset=lg["dataset"], model1=m["model1_first"], model2=m["model2_first"],
-                                            names=(m["model1"], m["model2"]))
-    for m in matches:
-        got = links.get(m["id"])
-        firsts = {}
-        if got:
-            for side, name in zip(("model1", "model2"), got["names"]):
-                if got[side]:
-                    firsts[name] = dict(got[side], dataset=got["dataset"])
-        m["decisions"] = {side: firsts.get(m[side]) for side in ("model1", "model2")} if firsts else None
-    for m in ko_matches:
-        m["decisions"] = None
     every = matches + ko_matches
     for m in every:
         m["stage_label"] = stage_label(m)

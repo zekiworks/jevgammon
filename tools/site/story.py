@@ -205,14 +205,12 @@ def row_name(x, kind: str) -> str:
     return x["name"] if kind == "program" else name_and_tag(x["name"], x["ds"])[0]
 
 
-def decisions_href(S, x) -> str | None:
-    """Every decision filtered to the setup (decisions/?d=…&s=…); a late entry, which Every decision does not hold, its
-    own page; a computed reference row none. Unescaped: the kit escapes its links."""
+def row_href(S, x) -> str | None:
+    """Where a row's name leads: a late entry's own page, else the setup's model page; a computed reference row
+    nowhere. Unescaped: the kit escapes its links."""
     if x["late"]:
         return P.late_href("", x["late"])
-    if x["q"] is None:
-        return None
-    return f'decisions/?d={x["ds"]}&s={P.meta(S, x["ds"], x["name"])["slug"]}'
+    return page_href(S, x)
 
 
 def page_href(S, x) -> str | None:
@@ -299,12 +297,10 @@ def details_lines(S, x, kind: str, extra: list, ref: str | None = None) -> list:
 
 
 def links_line(S, x, rel: str = "") -> str:
-    """The box's last line: the setup's decisions (a late entry: its own page) and its model page, where it has them;
-    rel: the page's way to the site root."""
-    href, page = decisions_href(S, x), page_href(S, x)
-    return " \u00b7 ".join(p for p in (
-        f'<a href="{rel}{esc(href)}">{"Its late-entry page" if x["late"] else "Its decisions"} \u2192</a>' if href else None,
-        f'<a href="{rel}{page}">Model page</a>' if page else None) if p)
+    """The box's last line: a late entry's own page, else the setup's model page, where it has one; rel: the page's way
+    to the site root."""
+    href = row_href(S, x)
+    return f'<a href="{rel}{esc(href)}">{"Its late-entry page" if x["late"] else "Model page"} \u2192</a>' if href else ""
 
 
 def release_missing(S) -> list:
@@ -754,7 +750,7 @@ class Leaderboard(ui.Bench):
                                                          [f"Did they improve? {NOT_IN_PLAN}"] if model else [])
         return ui.Row(
             model=ui.Model(row_name(x, kind), colour, mk, P.class_label(x["model"]) if model else "",
-                           decisions_href(S, x), tag=chip_text(S, x, kind, league=not model and setups == "all"),
+                           row_href(S, x), tag=chip_text(S, x, kind, league=not model and setups == "all"),
                            icon=family_icon(x["name"]) if model else ""),
             measure=measure_html, helpers=helpers, details=lines, details_label=f'{x["name"]}: details',
             filters={"models": model_type(S, x), "class": P.model_class(x["model"]) or "none"} if model else {},

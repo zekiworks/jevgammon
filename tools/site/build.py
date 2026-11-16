@@ -40,12 +40,12 @@ import learning_page  # noqa: E402
 import offline as O  # noqa: E402
 import pages  # noqa: E402
 from common import (CONTENT, EARLIER, INTERNAL, LATE_ENTRY, OUT_OF_SCOPE_OPPONENTS, PENDING, PROVISIONAL,  # noqa: E402
-                    PUBLISHED, ROOT, SITE, THRESHOLDS, aliases, label, relabel, setup_slug)
+                    PUBLISHED, ROOT, SITE, THRESHOLDS, aliases, label, relabel)
 
 BASE = "https://zekiworks.github.io/analysis/backgammon/"
 # The files of tools/site/assets/ copied to the site's root (hilde-leaf-transparent.png and the hilde-favicon/apple-touch
 # PNGs: Hilde Reader's mark, byte-identical from zekiworks/hilde dd56ed2f, Ümit #10114).
-ASSETS = ("site.css", "site.js", "tables.js", "png.js", "bg.css", "suite-bar.css", "bg.js", "decisions.css", "decisions.js",
+ASSETS = ("site.css", "site.js", "tables.js", "png.js", "bg.css", "suite-bar.css", "bg.js",
           "hilde-leaf-transparent.png", "hilde-favicon-16.png", "hilde-favicon-32.png",
           "hilde-apple-touch-180.png", "zw-ui.css", "zw-ui.js")
 # The Zeki Works bench kit (turkce, zw-ui v2.7 from tb-next 5d5bc0d5c; Zeki #4879, #9130): zw_ui.py writes the
@@ -110,15 +110,13 @@ def compute(args) -> dict:
     leagues = []
     audit = O.load_audit()
     boots = {}
-    close_records = {}
     for lg in L["leagues"]:
         names = lg["names"]
         summary = A.dataset_summary(lg["dataset"], lg["decisions"], names)
         offline = O.league(lg, {n: m for (d, n), m in setups.items() if d == lg["dataset"]}, audit)
         boots[lg["dataset"]] = offline.pop("_boot")
-        # Close choices (Method spec 2026-10-24 §9): per setup, and per decision for Every decision.
+        # Close choices (Method spec 2026-10-24 §9): per setup.
         close = CC.league(lg, audit, state / "plays")
-        close_records.update(close["records"])
         for n, s in summary.items():
             s["close"] = close["setups"].get(n)
         leagues.append(dict(
@@ -162,7 +160,7 @@ def compute(args) -> dict:
         # League winners · match results (B4): the league's first place once it finished; never a ranking.
         lg["winner"] = lg["standings"][0]["name"] if lg["state"] == "finished" and lg["standings"] else None
     # Every match, the Hype Cup and the Nackgammon knockout (Can, 29 Oct 2026): match results only, no league number.
-    every = cup.compute(state, leagues)
+    every = cup.compute(state)
     late = late_entry_summaries(L["late_entries"])
     # Repeat checks (Experiments): each repeat's state from the snapshot, and once complete Run 1 (the original) and Run 2
     # (the repeat) on exactly the pairs the repeat finished, the same computation as a setup's; on that page only.
@@ -183,7 +181,7 @@ def compute(args) -> dict:
         smoke=smoke, shared=shared, thresholds=THRESHOLDS, counts=counts, hypothesis=hypothesis, late_entries=late,
         matches={k: every[k] for k in ("stages", "total", "voided_total", "matches", "voided")},
         cup=every["cup"], knockout=every["knockout"],
-        close_spec=dict(fixed_on=CC.CC["fixed_on"], definition=CC.DEFINITION, label=CC.LABEL), _close=close_records,
+        close_spec=dict(fixed_on=CC.CC["fixed_on"], definition=CC.DEFINITION, label=CC.LABEL),
         close_b=json.loads((CONTENT / "close_choices_b_results.json").read_text()),
         nack=json.loads((CONTENT / "nack_paired_results.json").read_text()),
         nack_late=json.loads((CONTENT / "nack_paired_late.json").read_text()),
@@ -378,7 +376,7 @@ def write_data(S: dict, out: Path) -> None:
         model_setups=S["counts"]["model_setups"], models=S["counts"]["models"]))
     # The download linked from the hero and from Data: every league's results per setup, one league per key.
     write_json(out, "data/results.json", dict(
-        version="v3", note="Results per league; leagues are never merged. Decisions: decisions/index.json.",
+        version="v3", note="Results per league; leagues are never merged.",
         leagues={lg["dataset"]: dict(id=lg["id"], status=lg["status"], metric_status=lg["metric_status"],
                                      winner=lg["winner"], reasoning=lg["reasoning"],
                                      setups={n: brief(s) for n, s in lg["setups"].items()},
@@ -429,23 +427,6 @@ def preview_image(S: dict, out: Path) -> str | None:
             old.unlink()
         shutil.copy(shot, out / name)
     return name
-
-
-def showcase(S: dict, pool: dict) -> dict | None:
-    """The board on the hero and the social preview (B4): a typical Risk pays decision, from the most recent finished
-    league: among the models' Risk pays decisions with a stake inside thresholds hero_stake_range, the one whose
-    stake is closest to the median of that pool (ties: the lower decision id). Its callout explains that one model's
-    risk call; league positions were answered only by the model that moved."""
-    for lg in sorted(S["leagues"], key=lambda l: (l["metric_status"] == PUBLISHED, l["id"]), reverse=True):
-        rows = pool.get(lg["dataset"])
-        if rows:
-            stakes = sorted(r[0] for r in rows)
-            med = stakes[len(stakes) // 2]
-            d = min(rows, key=lambda r: (abs(r[0] - med), r[1]))[2]
-            return dict(league=lg["id"], metric_status=lg["metric_status"], pool=len(rows), median_stake=med,
-                        **pages.hero_numbers(d, f"League {lg['id']}", d["setup"], setup_slug(lg["dataset"], d["setup"]),
-                                             d["page"]))
-    return None
 
 
 def _shoot(html: str, png: Path, width: int, height: int) -> bool:
@@ -542,19 +523,15 @@ def main():
     S["base"] = BASE
     write_data(S, out)
     import decisions_export
-    datasets = [dict(id=lg["dataset"], label=f"League {lg['id']}", version="v3", league_id=lg["id"],
-                     status=PUBLISHED if lg["metric_status"] == PUBLISHED else PROVISIONAL)
-                for lg in S["leagues"]]
-    datasets.append(dict(id="v1-set", label=f"v1 set ({S['v1']['positions']:,} positions)", version="v1",
-                         status=EARLIER, note=pages.play_order_note(S)))
     if (out / "decisions").exists():
         shutil.rmtree(out / "decisions")
-    S["decisions_export"] = decisions_export.export(
-        out, S["_state"] / "snap.db", S["_state"] / "plays", S["_state"] / "prompts.db", ROOT / "replay.db",
-        ROOT / "positions/v1.jsonl", datasets, S["_close"])
+    S["decision_contexts"] = decisions_export.export(
+        out, S["_state"] / "snap.db", S["_state"] / "plays", S["_state"] / "prompts.db", [lg["id"] for lg in S["leagues"]])
     S["decision_files"] = sum(1 for p in (out / "decisions").rglob("*") if p.is_file())
-    S["showcase"] = showcase(S, decisions_export.SHOWCASE)
-    write_json(out, "data/showcase.json", S["showcase"] or {})
+    # No longer published (no bench publishes its questions, Ümit via Zeki #11048, #11050): the hero's decision and the
+    # Every decision viewer. The build writes on top of the published site, so their old files are removed here.
+    for gone in ("data/showcase.json", "decisions.js", "decisions.css"):
+        (out / gone).unlink(missing_ok=True)
     # The combined score page's feed (turkce #4062), at the site's root: from the leaderboard's own rows and numbers.
     write_json(out, bench_scores.PATH, bench_scores.build(S))
     S["hash"] = results_hash(out)

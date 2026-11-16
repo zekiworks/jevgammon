@@ -285,7 +285,8 @@ def _prompt() -> str:
     held, longest prime, pips. Chat models see each play under a letter.</li>
 </ol>
 <p>There is no move history: in the earlier version, adding the last 10 moves made no measurable difference. The
-  <a href="{DECISIONS}">Every decision</a> page shows the exact text each model was sent.</p>
+  rules text is published on <a href="{DECISIONS}">Every decision</a>; the text built for each position is not, so the
+  positions stay usable as a test.</p>
 {_h3("prompt-history", "History")}
 <p>The prompt was built one step at a time in the earlier version's leagues; the next section shows each step and what
   it changed. bg-v2 keeps that format and changes how the models are asked: the plays are shuffled, an invalid answer

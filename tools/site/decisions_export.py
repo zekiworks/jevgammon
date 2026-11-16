@@ -1,407 +1,79 @@
-"""The "Every decision" page (brief B5): every scored decision, page by page, as the model saw it.
+"""The "Every decision" page: per-decision records are not published.
 
-    export(out, snap, plays_dir, prompts_db, replay_db, v1_positions, datasets) -> counts per dataset and setup
-    body() -> the inner HTML of <main> for decisions/index.html
+    export(out, snap, plays_dir, prompts_db, league_ids) -> the hashes of the rules texts written, sorted
+    body(contexts) -> the inner HTML of <main> for decisions/index.html
 
-Writes, under out/decisions/:
-    index.json                                  datasets, their status and setups (name, slug, decisions, invalid, pages,
-                                                risk: decisions per B6 class)
-    <dataset>/<setup slug>/risk.json.gz         [page, id, class, risk call, band, close] per decision, so Every decision can
-                                                filter by Risk pays / Safety pays / No hit-risk trade-off and by close choice
-                                                (1 close choice, 0 eligible but not, null not eligible) without loading pages
-    <dataset>/<setup slug>/<page>.json.gz       PAGE_SIZE decisions per page, pages numbered from 1 (gzip, mtime 0, so an
-                                                unchanged page is byte-identical from one build to the next)
-    contexts/<hash>.txt                         the shared rules text of the prompts (hash = sha256(text)[:12])
-
-League decisions are the scored ones (STATE/plays, tools/site/score_plays.py) joined with the snapshot's turns and
-STATE/prompts.db; decisions not scored yet are not exported. The v1 set is one decision per (position, v1 model) of
-replay.db. Plays are listed in the order the model was shown them; the viewer is assets/decisions.js.
+No bench publishes its questions (Ümit via Zeki #11048, #11050): a position published with the engine's best play is a
+test item that can enter training, so the site publishes no per-decision record (board, dice, plays, best, chosen, the
+request text built for a position) and the earlier version's fixed position set (v1) is not published either. What is
+published under out/decisions/:
+    contexts/<hash>.txt     the shared rules text of the prompts of the leagues' scored model decisions (hash =
+                            sha256(text)[:12], as STATE/prompts.db keys it): the method, the same for every position
 """
 
-import gzip
-import hashlib
-import json
-import re
-import shutil
 import sqlite3
 import sys
 from pathlib import Path
 
 SITE = Path(__file__).resolve().parent
 sys.path.insert(0, str(SITE))
-sys.path.insert(0, str(SITE.parent / "v3"))
-sys.path.insert(0, str(SITE.parent))
 
-import analysis  # noqa: E402  (module import: analysis imports this module too; risk_class is read at call time)
-from common import EARLIER, PROVISIONAL, PROVISIONAL_NOTE, label, setup_slug  # noqa: E402
-from rules import from_json, pips  # noqa: E402
-import replay  # noqa: E402
+from common import esc  # noqa: E402
 
-PAGE_SIZE = 50
-LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-TURN_PART = "Score: you "
-# players.spec of the players that are programs: they get no prompt and give no probabilities.
+# players.spec of the players that are programs: they get no prompt.
 PROGRAM_SPECS = {"random", "safest", "gnubg-weak"}
-HITS = re.compile(r"the opponent hits with (\d+) of 36 rolls")
-EARLIER_BADGE = "Earlier version: plays listed in the runner's order"
-# replay.py sent these endpoints its letter prompt (system + one user message) instead of a decision request.
-LETTER_ENDPOINTS = (replay.GEMINI, replay.CODEX, replay.ANTHROPIC, replay.SGLANG_THINKING)
+
+# The model decisions of a league: every turn of a match in the league's view (a setup that moved leagues keeps its
+# matches here, whatever league its plays row was scored under), with whether its player is a program.
+TURNS = """
+SELECT t.id, p.spec IN ({programs})
+FROM turns t JOIN games g ON g.id = t.game_id JOIN league_match_view lm ON lm.match_id = g.match_id
+JOIN players p ON p.name = CASE t.player WHEN 1 THEN lm.model1 ELSE lm.model2 END
+WHERE lm.league_id = ? AND t.decided_by IN ('model', 'fallback')
+"""
 
 
 def ro(path):
     return sqlite3.connect(f"file:{path}?mode=ro", uri=True)
 
 
-def context_hash(text):
-    return hashlib.sha256(text.encode()).hexdigest()[:12]
-
-
-def split_context(s):
-    """(context, separator, turn text) with context + separator + text == s, split as prompts.db does: at the first
-    "Score: you ", the context rstripped."""
-    i = s.find(TURN_PART)
-    if i < 0:
-        raise ValueError("prompt without a turn part")
-    context = s[:i].rstrip()
-    return context, s[len(context):i], s[i:]
-
-
-def r4(x):
-    return None if x is None else round(x, 4)
-
-
-def board(pos):
-    pts, bar, off = pos
-    return {"points": list(pts), "bar": list(bar), "off": list(off)}
-
-
-def write_page(root, ds, setup, page, pages, decisions):
-    path = root / ds / setup_slug(ds, setup) / f"{page}.json.gz"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    doc = {"dataset": ds, "setup": setup, "slug": setup_slug(ds, setup), "page": page, "pages": pages,
-           "decisions": decisions}
-    raw = json.dumps(doc, ensure_ascii=False, separators=(",", ":")).encode()
-    path.write_bytes(gzip.compress(raw, compresslevel=9, mtime=0))
-
-
-def pages_of(items):
-    return [items[i:i + PAGE_SIZE] for i in range(0, len(items), PAGE_SIZE)]
-
-
-RISK_CODE = {"risk": "r", "safety": "s", "none": "n", None: None}
-CALL_CODE = {"right_risk": "rr", "wrong_risk": "wr", "needless": "nr", "missed": "mr", "right_safety": "rs", None: None}
-BAND_CODE = {"small": "s", "medium": "m", "big": "b", None: None}
-
-
-def mark_risk(d: dict, entries, order, page: int) -> None:
-    """B6.1 marks of one exported decision by the same rule as the site's analyses (analysis.risk_class), on the
-    unrounded engine equities (entries[legal index] = (notation, equity, hitting rolls, description)): position
-    class, risk call (main margin and robustness margin), stake, the best safe play and the band the Every decision
-    filter uses (the stake for Risk pays decisions, the equity the chosen play lost for needless risks)."""
-    shown = [entries[li] for li in order]
-    scored = all(e[1] is not None and e[2] is not None for e in shown)
-    top = max(e[1] for e in shown) if scored else None
-    probe = {"invalid": d["invalid"], "scored": scored, "chosen": d["chosen"], "shots": [e[2] for e in shown],
-             "losses": [top - e[1] for e in shown] if scored else None}
-    cls, call, stake = analysis.risk_class(probe)
-    if cls is None:
-        d["risk"] = None
-        return
-    _, call_robust, _ = analysis.risk_class(probe, analysis.T["risk_margin_robust"])
-    least = min(probe["shots"])
-    safe = min((k for k, s in enumerate(probe["shots"]) if s == least), key=lambda k: probe["losses"][k])
-    loss = probe["losses"][d["chosen"]]
-    bnd = (analysis.band(stake) if cls == "risk" else
-           analysis.band(loss, analysis.T["needless_loss_bands"]) if call == "needless" else None)
-    d["risk"] = {"class": cls, "call": call, "call_robust": call_robust, "band": bnd,
-                 "stake": analysis_r4(stake), "best_safe": safe if cls != "none" else None}
-    # The hero board (B4): a typical Risk pays decision by a model, stake within the hero range.
-    lo, hi = analysis.T["hero_stake_range"]
-    if cls == "risk" and not d["program"] and lo <= stake <= hi:
-        SHOWCASE.setdefault(d["dataset"], []).append(
-            (stake, d["id"], {k: d[k] for k in ("id", "dataset", "setup", "dice", "board", "pips", "plays", "best",
-                                                "chosen", "phase", "turn_no", "risk")} | {"stake": stake, "page": page}))
-
-
-def analysis_r4(x):
-    return None if x is None else round(x, 4)
-
-
-SHOWCASE: dict = {}
-
-
-def write_risk_index(root, ds, setup, rows) -> dict:
-    """rows: (page, id, decision['risk'], decision['close']); each item [page, id, class, call, band, close]; returns the
-    counts per class and per call for index.json (the pre-deploy check compares them with the analysis) and the
-    close-choice counts (Method spec 2026-10-24 §9)."""
-    path = root / ds / setup_slug(ds, setup) / "risk.json.gz"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    cc = lambda c: None if c is None else int(c["close"])
-    items = [([pg, i, RISK_CODE[r["class"]], CALL_CODE[r["call"]], BAND_CODE[r["band"]]] if r else [pg, i, None, None, None])
-             + [cc(c)] for pg, i, r, c in rows]
-    path.write_bytes(gzip.compress(json.dumps(items, separators=(",", ":")).encode(), compresslevel=9, mtime=0))
-    counts = {"risk": 0, "safety": 0, "none": 0, "unclassified": 0, "calls": {c: 0 for c in analysis.CALLS}}
-    for _, _, r, _ in rows:
-        counts[r["class"] if r else "unclassified"] += 1
-        if r and r["call"]:
-            counts["calls"][r["call"]] += 1
-    counts["close"] = {"close": sum(1 for *_, c in rows if c and c["close"]),
-                       "other": sum(1 for *_, c in rows if c and not c["close"])}
-    return counts
-
-
-def shown_plays(entries, order, probs, program, cycle=None):
-    """The plays in shown order: entries[legal index] = (notation, equity, hitting rolls, description).
-
-    Letters: A, B, ... in shown order (none past Z, none for programs). When a chat model's plays were split into groups
-    of `cycle`, group i is plays i*cycle .. i*cycle+cycle-1 of the shown order, lettered from A in its own request."""
-    equities = [e[1] for e in entries if e[1] is not None]
-    top = max(equities) if equities else None
-    plays = []
-    for k, li in enumerate(order):
-        notation, equity, hits, desc = entries[li]
-        j = k % cycle if cycle else k
-        plays.append({"letter": LETTERS[j] if j < len(LETTERS) and not program else None,
-                      "notation": notation, "description": desc, "equity": r4(equity),
-                      "loss": r4(top - equity) if equity is not None else None,
-                      "probability": r4(probs[k]) if probs and probs[k] is not None else None,
-                      "hitting_rolls": hits})
-    best = None
-    for k, p in enumerate(plays):
-        if p["equity"] is not None and (best is None or p["equity"] > plays[best]["equity"]):
-            best = k
-    return plays, best
-
-
-# League decisions.
-
-TURNS = """
-SELECT t.id, t.game_id, t.turn_no, t.side, t.die1, t.die2, t.position, t.option_order, t.probabilities,
-       t.probability_source, t.decided_by, t.group_size, t.request_ms, t.retry_ms, t.cost_usd,
-       CASE t.player WHEN 1 THEN lm.model1 ELSE lm.model2 END
-FROM turns t JOIN games g ON g.id = t.game_id JOIN league_match_view lm ON lm.match_id = g.match_id
-WHERE lm.league_id = ? AND t.decided_by IN ('model', 'fallback')
-"""
-
-
-def close_mark(rec, order) -> dict | None:
-    """The close-choice record of one decision for Every decision: p1, p2 and both candidates in shown order."""
-    if rec is None:
-        return None
-    return {"close": rec["close"], "p1": r4(rec["p1"]), "p2": r4(rec["p2"]), "c1": order.index(rec["c1"]),
-            "c2": order.index(rec["c2"])}
-
-
-def export_league(root, ds, sdb, shards, pdb, contexts, close):
-    league = ds["league_id"]
-    # The league's current participants in join order (league_web.participants), programs by players.spec.
-    # Names as shown (content/labels.json); slugs stay those of the databases' names.
-    models = [(label(name), spec) for name, spec in sdb.execute(
-        """SELECT p.name, p.spec FROM league_players lp JOIN players p ON p.id = lp.player_id
-           WHERE lp.league_id = ? AND lp.left_at IS NULL ORDER BY lp.id""", (league,)).fetchall()]
-    programs = {name for name, spec in models if spec in PROGRAM_SPECS}
-    turns, setup_of = {}, {}
-    for r in sdb.execute(TURNS, (league,)):
-        turns[r[0]], setup_of[r[0]] = tuple(r[:-1]), label(r[-1])
-    by_setup = {name: [] for name, _ in models}
-    # The league's scored decisions: every scored turn of a match in the league's view (a setup that
-    # moved leagues keeps its matches here, whatever league its plays row was scored under).
-    for db in shards.values():
-        for (tid,) in db.execute("SELECT turn_id FROM plays"):
-            if tid in turns:
-                by_setup.setdefault(setup_of[tid], []).append(tid)
-    out = {}
-    for setup in sorted(by_setup, key=str.lower):
-        ids = sorted(by_setup[setup])
-        program = setup in programs
-        invalid = 0
-        risk_rows = []
-        chunks = pages_of(ids)
-        for page, chunk in enumerate(chunks, 1):
-            rows = {}
-            for tid in chunk:
-                rows[tid] = shards[tid % len(shards)].execute(
-                    "SELECT game_id, chosen, phase, tag, data FROM plays WHERE turn_id = ?", (tid,)).fetchone()
-            prompts = {}
-            if pdb is not None and not program:
-                marks = ",".join("?" * len(chunk))
-                for tid, fmt, ctx, sep, reqs in pdb.execute(
-                        f"SELECT turn_id, format, context, separator, requests FROM seen WHERE turn_id IN ({marks})", chunk):
-                    prompts[tid] = {"format": fmt, "context": ctx, "separator": sep, "requests": json.loads(reqs)}
-                    if ctx is not None:
-                        contexts.add(ctx)
-            decisions = []
-            for tid in chunk:
-                (_, game, turn_no, side, d1, d2, position, order, probs, source, decided_by, group_size,
-                 request_ms, retry_ms, cost) = turns[tid]
-                _, chosen, phase, tag, data = rows[tid]
-                entries = json.loads(data)
-                pos = from_json(json.loads(position), side)
-                order = json.loads(order) if order else list(range(len(entries)))
-                if sorted(order) != list(range(len(entries))):
-                    raise RuntimeError(f"turn {tid}: option_order does not match the {len(entries)} legal plays")
-                # A choice-only setup records 1.0 for its pick: that is not a probability (brief B11).
-                probs = json.loads(probs) if probs and source != "choice_only" else None
-                prompt = prompts.get(tid)
-                cycle = group_size if prompt and prompt["format"] == "letters" else None
-                plays, best = shown_plays(entries, order, probs, program, cycle)
-                bad = decided_by == "fallback"
-                invalid += bad
-                decisions.append({
-                    "id": tid, "dataset": ds["id"], "setup": setup, "league": league, "game": game, "turn_no": turn_no,
-                    "side": side, "dice": [d1, d2], "board": board(pos), "phase": phase, "tag": tag,
-                    "pips": list(pips(pos)), "program": program, "prompt": prompt, "plays": plays,
-                    "chosen": order.index(chosen), "best": best, "decided_by": decided_by, "invalid": bad,
-                    "group_size": group_size, "probability_source": source,
-                    "request_seconds": None if request_ms is None else request_ms / 1000,
-                    "retry_seconds": None if retry_ms is None else retry_ms / 1000, "cost_usd": cost,
-                    "close": close_mark(close.get(tid), order)})
-                mark_risk(decisions[-1], entries, order, page)
-                risk_rows.append((page, tid, decisions[-1]["risk"], decisions[-1]["close"]))
-            write_page(root, ds["id"], setup, page, len(chunks), decisions)
-        out[setup] = {"slug": setup_slug(ds["id"], setup), "decisions": len(ids), "invalid": invalid,
-                      "pages": len(chunks), "program": program,
-                      "risk": write_risk_index(root, ds["id"], setup, risk_rows)}
-    return out
-
-
-# The v1 set.
-
-def v1_prompt(model, pid, state, instructions, options):
-    """What replay.py sent `model` for this position, split like prompts.db."""
-    url = replay.MODELS[model][0] if model in replay.MODELS else ""
-    if any(e in url for e in LETTER_ENDPOINTS):
-        system, prompt, _ = replay.letter_prompt(state, instructions, options)
-        context, sep, text = split_context(prompt)
-        req = {"system": system, "instructions": None, "text": text, "options": None}
-        if replay.ANTHROPIC in url:
-            req = {"system_prefix": [replay.CLAUDE_CODE_IDENTITY], **req}
-        return "letters", context, sep, req
-    context, sep, text = split_context(state)
-    return "decision", context, sep, {"system": None, "instructions": instructions, "text": text,
-                                      "options": [[n, d] for n, d in options.items()]}
-
-
-def export_v1(root, ds, rdb, v1_positions, contexts):
-    labels = {}
-    with open(v1_positions) as f:
-        for line in f:
-            r = json.loads(line)
-            labels[r["replay_position_id"]] = r
-    positions = {r[0]: r for r in rdb.execute(
-        "SELECT id, position, side, die1, die2, state, instructions, options FROM positions ORDER BY id")}
-    equities = {}
-    for pid, play, eq in rdb.execute("SELECT position_id, play, equity FROM equities"):
-        equities[(pid, play)] = eq
-    answers = {}
-    for row in rdb.execute("SELECT model, position_id, choice, probabilities, latency_ms, error FROM answers "
-                           "ORDER BY model, position_id"):
-        answers.setdefault(row[0], []).append(row[1:])
-    out = {}
-    for model in sorted(answers, key=str.lower):
-        rows = answers[model]
-        shown = label(model)  # the name the site shows; its slug stays the recorded name's (setup_slug)
-        # Choice-only runs record their pick as {play: 1.0}: no probability (brief B11).
-        choice_only = all(p is None or len(json.loads(p)) == 1 and next(iter(json.loads(p).values())) == 1.0
-                          for _, _, p, _, _ in rows)
-        source = "choice_only" if choice_only else "decision"
-        invalid = 0
-        risk_rows = []
-        chunks = pages_of(rows)
-        for page, chunk in enumerate(chunks, 1):
-            decisions = []
-            for pid, choice, probs, latency_ms, error in chunk:
-                _, position, side, d1, d2, state, instructions, options = positions[pid]
-                options = json.loads(options)
-                if model in replay.SHUFFLED:
-                    options = replay.shuffled(options, pid)
-                fmt, context, sep, request = v1_prompt(model, pid, state, instructions, options)
-                h = context_hash(context)
-                contexts[h] = context
-                names = list(options)
-                probs = json.loads(probs) if probs and not choice_only else None
-                entries = []
-                for n in names:
-                    m = HITS.search(options[n])
-                    entries.append((n, equities.get((pid, n)), int(m.group(1)) if m else None, options[n]))
-                plays, best = shown_plays(entries, range(len(names)),
-                                          [probs.get(n) for n in names] if probs else None, False)
-                bad = error is not None or choice not in options
-                invalid += bad
-                pos = from_json(json.loads(position), side)
-                lab = labels[pid]
-                decisions.append({
-                    "id": lab["id"], "dataset": ds["id"], "setup": shown, "league": None, "game": None,
-                    "turn_no": lab["turn"], "side": side, "dice": [d1, d2], "board": board(pos), "phase": lab["phase"],
-                    "tag": lab["tag"], "pips": list(pips(pos)), "program": False,
-                    "prompt": {"format": fmt, "context": h, "separator": sep, "requests": [request]},
-                    "plays": plays, "chosen": None if bad else names.index(choice), "best": best,
-                    "decided_by": "invalid" if bad else "model", "invalid": bad, "group_size": None,
-                    "probability_source": source,
-                    "request_seconds": None if latency_ms is None else latency_ms / 1000,
-                    "retry_seconds": None, "cost_usd": None})
-                mark_risk(decisions[-1], entries, range(len(names)), page)
-                risk_rows.append((page, lab["id"], decisions[-1]["risk"], None))
-            write_page(root, ds["id"], shown, page, len(chunks), decisions)
-        out[shown] = {"slug": setup_slug(ds["id"], shown), "decisions": len(rows), "invalid": invalid,
-                      "pages": len(chunks), "program": False,
-                      "risk": write_risk_index(root, ds["id"], shown, risk_rows)}
-    return out
-
-
-def badge(status):
-    return {PROVISIONAL: PROVISIONAL_NOTE, EARLIER: EARLIER_BADGE}.get(status, status)
-
-
-def export(out: Path, snap: Path, plays_dir: Path, prompts_db: Path, replay_db: Path, v1_positions: Path,
-           datasets: list[dict], close: dict) -> dict:
-    root = Path(out) / "decisions"
-    if root.exists():
-        shutil.rmtree(root)
-    (root / "contexts").mkdir(parents=True)
-    sdb = ro(snap)
-    shard_paths = {int(p.stem[1:]): p for p in Path(plays_dir).glob("s*.db") if p.stem[1:].isdigit()}
-    if shard_paths and sorted(shard_paths) != list(range(len(shard_paths))):
-        raise RuntimeError(f"plays shards are not s0..s{len(shard_paths) - 1}: {sorted(shard_paths)}")
-    shards = {k: ro(p) for k, p in sorted(shard_paths.items())}
-    pdb = ro(prompts_db) if Path(prompts_db).exists() else None
-    rdb = ro(replay_db)
-    league_contexts, v1_contexts = set(), {}
-    result, index = {}, []
-    for ds in datasets:
-        if ds["version"] == "v1":
-            setups = export_v1(root, ds, rdb, v1_positions, v1_contexts)
-        else:
-            setups = export_league(root, ds, sdb, shards, pdb, league_contexts, close)
-        result[ds["id"]] = {name: {k: v for k, v in s.items() if k != "program"} for name, s in setups.items()}
-        index.append({"id": ds["id"], "label": ds["label"], "version": ds["version"], "status": ds["status"],
-                      "badge": badge(ds["status"]), "note": ds.get("note"), "league_id": ds.get("league_id"),
-                      "setups": [dict(name=name, **s) for name, s in setups.items()]})
-    for h in league_contexts:
+def export(out: Path, snap: Path, plays_dir: Path, prompts_db: Path, league_ids: list[int]) -> list[str]:
+    """Writes out/decisions/contexts/<hash>.txt for every rules text a scored model decision of the leagues was sent."""
+    root = Path(out) / "decisions" / "contexts"
+    root.mkdir(parents=True)
+    if not Path(prompts_db).exists():
+        return []
+    sdb, pdb = ro(snap), ro(prompts_db)
+    turns = set()
+    for league in league_ids:
+        turns.update(tid for tid, program in sdb.execute(
+            TURNS.format(programs=",".join("?" * len(PROGRAM_SPECS))), (*sorted(PROGRAM_SPECS), league)) if not program)
+    scored = set()
+    for shard in Path(plays_dir).glob("s*.db"):
+        scored.update(tid for (tid,) in ro(shard).execute("SELECT turn_id FROM plays") if tid in turns)
+    contexts = {ctx for tid, ctx in pdb.execute("SELECT turn_id, context FROM seen WHERE context IS NOT NULL")
+                if tid in scored}
+    for h in sorted(contexts):
         row = pdb.execute("SELECT text FROM contexts WHERE hash = ?", (h,)).fetchone()
         if row is None:
             raise RuntimeError(f"prompts.db: context {h} is missing")
-        (root / "contexts" / f"{h}.txt").write_text(row[0])
-    for h, text in v1_contexts.items():
-        (root / "contexts" / f"{h}.txt").write_text(text)
-    (root / "index.json").write_text(json.dumps({"page_size": PAGE_SIZE, "datasets": index}, ensure_ascii=False,
-                                                separators=(",", ":")))
-    return result
+        (root / f"{h}.txt").write_text(row[0])
+    return sorted(contexts)
 
 
-def body() -> str:
+def body(contexts: list[str]) -> str:
+    """The page's note; `contexts`: the hashes of the rules texts written by export."""
+    items = "".join(f'<li><a href="contexts/{esc(h)}.txt"><code>{esc(h)}</code></a></li>' for h in contexts)
+    rules = (f'<p>The rules text every model decision was sent before its position (the same for every position of a '
+             f'prompt format; the method page describes the rest of the prompt):</p><ul>{items}</ul>') if items else ""
     return f"""<section class="card hero page-head">
 <p class="eyebrow">Every decision</p>
-<h1>What did each model see, and what did it play?</h1>
+<h1>Per-decision records are kept private</h1>
 </section>
-<div id="dec-controls" class="panel dec-controls" hidden></div>
-<noscript><p class="note">This page loads its decisions on demand with JavaScript. The same data is in
-<code>decisions/index.json</code> and the gzip-compressed JSON page files listed there.</p></noscript>
-<p id="dec-status" class="note" role="status"></p>
-<div id="dec-list" class="dec-list"></div>
-<nav id="dec-pager-bottom" class="dec-pager" aria-label="Pages" hidden></nav>
-<details class="about"><summary>About this page</summary><p>Every scored decision, {PAGE_SIZE} to a page: the board,
-the position exactly as the model saw it, every legal play with its consequences, the engine's equity for each play, the
-equity the chosen play lost and the model's probability where it gives one. Click a column header to sort a play
-table.</p></details>
+<section class="card" id="private">
+<p>No benchmark should publish its questions: a position published with the engine's best play is a test item, and
+published test items can end up in a model's training data. So this site does not publish its positions, the plays
+each model chose in them or the engine's best play for each. The results, the error rates, the risk calls and every
+other aggregate on this site are computed from all of them and stay public, as do the match results.</p>
+{rules}</section>
 """

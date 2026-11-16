@@ -11,7 +11,7 @@ from common import (EARLIER, EARLIER_NOTE, LATE_ENTRY, LATE_ENTRY_LABEL, LATE_EN
                     OUT_OF_SCOPE, OUT_OF_SCOPE_OPPONENTS, PENDING, PROVISIONAL, PROVISIONAL_NOTE, PUBLISHED,
                     QC_LABEL, QC_SETUPS, REASONING_NOTES, ROOT, SUITE_BAR, TOO_FEW, aliases, count, esc, fmt, nm, pct,
                     relabel, setup_slug, shown_names_html, slug, status_badge, unplayed_text)
-from common import SHARED_NAMES, effort_aliases, model_key, name_and_tag, name_html, name_text, tag_html, tag_text
+from common import SHARED_NAMES, effort_aliases, model_key, name_and_tag, name_html, tag_html, tag_text
 import zw_ui as ui
 
 # The site's top bar (Ümit #2901, as Clocktower Bench's): the Hilde leaf and the site's name, then one row of tabs. Each
@@ -379,7 +379,7 @@ def layout(S, base, path: str, title: str, body: str, description: str | None = 
   </main>
   <footer class="footer">
     <nav class="footer-links" aria-label="Site"><a href="{rel}about/">About</a> · <a href="{rel}method/">Method</a> · <a href="{rel}data/">Data</a> · <a href="{GITHUB}">GitHub</a></nav>
-    <p{' id="downloads"' if not path else ""}>Download: <a href="{rel}data/results.json" download="results.json">results.json</a> · <a href="{rel}decisions/index.json" download="decisions.json">decisions.json</a> · <a href="{rel}data/">every data file</a></p>
+    <p{' id="downloads"' if not path else ""}>Download: <a href="{rel}data/results.json" download="results.json">results.json</a> · <a href="{rel}data/">every data file</a></p>
     <p>{esc(version_line(S))}</p>
   </footer>
 </body>
@@ -446,9 +446,6 @@ def league_reasoning_table(S, lg) -> str:
             + "".join(f'<p class="table-note">{n}</p>' for n in notes))
 
 
-SITE_CSS_DIR = Path(__file__).resolve().parent / "assets"
-
-
 def tail_table(S, rel, dataset, setups) -> str:
     rows = []
     for n in by_error(setups):
@@ -474,20 +471,6 @@ def phase_table(S, rel, dataset, setups, field="phases", labels=None, title="Err
     head = ["Model and setting"] + [PHASE_LABEL.get(str(l), str(l).capitalize()) for l in labels]
     return SWIPE + table(head, rows, f"{title}; the small number is the decisions in the cell",
                          attrs=f' data-dataset="{dataset}"')
-
-
-
-def hero_numbers(dec: dict, label: str, who: str, slug_: str, page: int) -> dict:
-    """The numbers of one decision for the hero board, from an exported decision: its B6.1 marks (computed by
-    decisions_export.mark_risk with analysis.risk_class), the engine's best play, the best safe play, the play made."""
-    plays, r = dec["plays"], dec["risk"]
-    pick = lambda i: dict(notation=plays[i]["notation"], hitting_rolls=plays[i]["hitting_rolls"], loss=plays[i]["loss"])
-    return dict(dataset=dec["dataset"], label=label, who=who, id=dec["id"], slug=slug_, page=page,
-                dice=dec["dice"], board=dec["board"], pips=dec["pips"], phase=dec["phase"], kind=r["class"],
-                call=r["call"], stake=dec["stake"], best=pick(dec["best"]), best_safe=pick(r["best_safe"]),
-                chosen=pick(dec["chosen"]))
-
-
 
 
 
@@ -536,26 +519,17 @@ def standings(S, lg, rel) -> str:
 MATCH_STATE = {"finished": "Finished", "running": "Running", "aborted": "Stopped", None: "Not started"}
 
 
-def matches_table(S, lg, rel) -> str:
-    """Every league-stage match; a row opens the first decision of the first-named player in that match."""
+def matches_table(lg) -> str:
+    """Every league-stage match: its players, matchday, score, status and games."""
     rows = []
     for m in lg["matches_list"]:
-        links = []
-        for side in ("model1", "model2"):
-            first = m[side + "_first"]
-            if first:
-                links.append(f'<a href="{rel}decisions/?d={lg["dataset"]}&amp;s={first["slug"]}&amp;p={first["page"]}#d{first["id"]}">'
-                             f'{esc(m[side])}</a>')
-        href = links[0].split('"')[1].replace("&amp;", "&") if links else None
         score = f'{m["score1"]}\u2013{m["score2"]}' if m["status"] else ""
-        rows.append(f'<tr data-dataset="{lg["dataset"]}"{f" data-href={chr(34)}{esc(href)}{chr(34)}" if href else ""}>'
+        rows.append(f'<tr data-dataset="{lg["dataset"]}">'
                     f'<td class="model"><span class="model-name">{esc(m["model1"])} v {esc(m["model2"])}</span></td>'
                     f'<td class="num">{m["matchday"]}</td><td class="num">{score}</td>'
-                    f'<td>{esc(MATCH_STATE.get(m["status"], m["status"]))}</td><td class="num">{m["games"]}</td>'
-                    f'<td>{" · ".join(links) if links else nm(NA)}</td></tr>')
-    head = ["Match", "Matchday", "Score", "Status", "Games", "Decisions of each player"]
-    return SWIPE + table(head, rows, "Matches; a row opens the first-named player's decisions in that match",
-                         attrs=f' data-dataset="{lg["dataset"]}"')
+                    f'<td>{esc(MATCH_STATE.get(m["status"], m["status"]))}</td><td class="num">{m["games"]}</td></tr>')
+    head = ["Match", "Matchday", "Score", "Status", "Games"]
+    return SWIPE + table(head, rows, "Matches", attrs=f' data-dataset="{lg["dataset"]}"')
 
 
 def league_notes(S, lg) -> str:
@@ -609,7 +583,7 @@ def league_sections(S) -> str:
                       f'<h3 id="league-{lg["id"]}-quality">Decision quality</h3>{q}'
                       f'<h3 id="league-{lg["id"]}-cost">Time and cost</h3>{c}'
                       f'<details class="more" id="league-{lg["id"]}-matches"><summary>Matches ({count(lg["matches"])})</summary>'
-                      f'{matches_table(S, lg, rel)}<p class="table-note">This league table\'s matches. Every match of every '
+                      f'{matches_table(lg)}<p class="table-note">This league table\'s matches. Every match of every '
                       f'stage (ladder rounds, gap matches, late entries, the Hype Cup, the Nackgammon knockout) and the '
                       f'voided ones: <a href="../matches/">Matches</a>.</p></details></section>')
     import starting_groups as SG
@@ -794,28 +768,20 @@ def cup_card(S, rel: str = "../") -> str:
 
 # --- Matches ------------------------------------------------------------------------------------------------
 
-def match_row(m: dict, rel: str) -> str:
-    links = []
-    for side in ("model1", "model2"):
-        first = (m.get("decisions") or {}).get(side)
-        if first:
-            links.append(f'<a href="{rel}decisions/?d={first["dataset"]}&amp;s={first["slug"]}&amp;p={first["page"]}'
-                         f'#d{first["id"]}">{esc(m[side])}</a>')
+def match_row(m: dict) -> str:
     stage = esc(m["stage_label"]) + (f'<span class="small">{esc(m["note"])}</span>' if m.get("note") else "")
     winner = esc(m["winner"]) if m["winner"] else "Draw"
     num = f'K{m["id"]}' if m["source"] == "knockout" else str(m["id"])
     return (f'<tr id="{match_anchor(m["source"], m["id"])}"{" class=late-entry" if m["stage"] == "late-entry" else ""}>'
             f'<td class="model"><span class="model-name">{esc(m["model1"])} v {esc(m["model2"])}</span></td>'
             f'<td class="num">{num}</td><td class="date">{m["finished"][:10]}</td><td>{stage}</td>'
-            f'<td class="num">{m["score1"]}\u2013{m["score2"]}</td><td>{winner}</td>'
-            f'<td>{" · ".join(links) if links else nm("not on the site")}</td></tr>')
+            f'<td class="num">{m["score1"]}\u2013{m["score2"]}</td><td>{winner}</td></tr>')
 
 
-MATCH_HEAD = ["Match", "#", "Finished", "Stage", "Score", "Winner", "Decisions of each player"]
+MATCH_HEAD = ["Match", "#", "Finished", "Stage", "Score", "Winner"]
 
 
 def matches_page(S) -> str:
-    rel = "../"
     M = S["matches"]
     by = {}
     for m in M["matches"]:
@@ -839,7 +805,7 @@ def matches_page(S) -> str:
         for title, ms in parts.items():
             sid = f'stage-{s["stage"]}-{slug(title)}' if title else ""
             inner.append((f'<h3 id="{sid}">{esc(title)} ({count(len(ms))})</h3>' if title else "")
-                         + SWIPE + table(MATCH_HEAD, [match_row(m, rel) for m in ms],
+                         + SWIPE + table(MATCH_HEAD, [match_row(m) for m in ms],
                                          f'{s["label"]}{": " + title if title else ""}; in the order the matches started',
                                          cls="board list"))
         note = {"ladder": "Matches a ladder move made: the mover against the setups of its new league it had not met. "
@@ -1500,8 +1466,7 @@ def close_section(S, dataset: str, name: str, c: dict, rel: str) -> str:
                'band is empty. A big stake means playing safe costs more by the engine\'s value, not that the decision '
                'was harder.</p>')
     out.append(close_missed_table(c))
-    out.append(f'<p class="table-note">{esc(spec["label"])} <a href="{rel}decisions/?d={dataset}&amp;s={meta(S, dataset, name)["slug"]}'
-               f'&amp;k=close">Every close choice of this setup</a></p></section>')
+    out.append('</section>')
     return "".join(out)
 
 
@@ -1539,8 +1504,7 @@ def model_page(S, dataset: str, name: str, entry: dict | None, smoke_row: dict |
         cells += f"<dt>No trade-off</dt><dd>{count(int(r['no_trade_off']))} (left out of every risk metric)</dd>"
         note = f'<p class="note">{esc(play_order_note(S))}</p>' if dataset == "v1-set" else ""
         parts.append(f'<section class="card" id="results"><h2>Results in {esc(where)}</h2>{note}<dl class="facts">{cells}</dl>'
-                     f'<p><a href="{rel}decisions/?d={dataset}&amp;s={m["slug"] if dataset != "v1-set" else slug(name)}">Every decision of this setup</a> · '
-                     f'<a href="{rel}data/{"v1/v1-set" if dataset == "v1-set" else "v3/" + dataset}/{setup_slug(dataset, name)}.json">JSON</a></p></section>')
+                     f'<p><a href="{rel}data/{"v1/v1-set" if dataset == "v1-set" else "v3/" + dataset}/{setup_slug(dataset, name)}.json">JSON</a></p></section>')
         if r["trade_off"]:
             top = max(r["calls"].values()) or 1
             bars = "".join(f'<div class="cc-row"><span class="cc-l">{esc(lab)}</span><span class="cc-bar {cls}" '
@@ -1637,8 +1601,7 @@ def disagreements_page(S) -> str:
     dist = "".join(f'<tr><td class="num">{k}</td><td class="num">{count(v)}</td></tr>' for k, v in d["distribution"].items())
     rows = []
     for r in d["rows"][:150]:
-        first = slug(next(iter(S["v1"]["setups"])))
-        rows.append(f'<tr data-dataset="v1-set"><td><a href="../decisions/?d=v1-set&amp;s={first}&amp;p={(r["pid"] - 1) // 50 + 1}#d{esc(r["id"])}">{esc(r["id"])}</a></td>'
+        rows.append(f'<tr data-dataset="v1-set"><td>{esc(r["id"])}</td>'
                     f'<td>{esc(PHASE_LABEL.get(r["phase"], r["phase"]))}</td><td class="num">{r["plays"]}</td>'
                     f'<td class="num">{r["distinct"]}</td><td class="num">{pct(r["best_share"], 0)}</td>'
                     f'<td>{esc(r["common"])}<span class="small">{pct(r["common_share"], 0)} of setups, loses {eq(r["common_loss"])}</span></td>'
@@ -1647,8 +1610,8 @@ def disagreements_page(S) -> str:
             "Most common play", "Engine's best play"]
     return (page_head(S, "Where models disagree", "Where do models disagree?")
             + f'<section class="card" id="v1" data-version="v1"><div class="section-head"><h2>Earlier version: the v1 set</h2>{status_badge(EARLIER)}</div>'
-              + SWIPE + table(head, rows, "The 150 positions with the most different plays (then the fewest engine-best choices); "
-                              "a row opens the position in Every decision", attrs=' data-version="v1"')
+              + SWIPE + table(head, rows, "The 150 positions with the most different plays (then the fewest engine-best choices)",
+                              attrs=' data-version="v1"')
               + f'<p class="table-note">{count(d["positions"])} positions, {count(len(S["v1"]["setups"]))} setups. All setups chose '
                 f'the same play in {count(d["all_agree"])} positions. {esc(play_order_note(S))}</p>'
               + '<details class="more"><summary>How many different plays the setups chose</summary>'
@@ -1713,12 +1676,10 @@ def status_list(S) -> str:
 # The Data page's downloads and how-to-recompute text, also on the About page (both pages are one level down, so the
 # links are the same).
 DOWNLOADS = ('<p class="hero-links"><a class="key" href="../data/results.json" download="results.json">results.json</a> '
-             '<a class="key" href="../decisions/index.json" download="decisions.json">decisions.json</a> '
              '<a class="key" href="../new-models/">New models: first look</a> <a class="key" href="../models/">Every model setup</a></p>'
              '<p>results.json: every league\'s results per setup, one league per key, every risk metric at both margins. '
-             'decisions.json: the index of every decision file, one gzip JSON file per setup and page of 50 decisions, '
-             'with the board, the plays as shown, the engine\'s equities, the model\'s choice and its position class, '
-             'stake and risk call.</p>')
+             'Per-decision records (positions, plays, the engine\'s best play) are not published: '
+             '<a href="../decisions/">why</a>.</p>')
 
 
 def recompute(thresholds_href: str) -> str:
@@ -1737,8 +1698,8 @@ def data_page(S, out: Path) -> str:
             + f'<section class="card" id="downloads"><h2>Downloads</h2>{DOWNLOADS}'
               + SWIPE + table(["File", "Bytes", "sha256"], [rows], "Data files of this build", cls="board list")
               + f'<p class="table-note">Data files are split per version, league and model, '
-              f'so each loads on a phone. Every number on the site is in one of them. The decision files behind '
-              f'<a href="../decisions/">Every decision</a> are under <code>decisions/</code> ({count(S["decision_files"])} files, gzip-compressed JSON).</p></section>'
+              f'so each loads on a phone. Every number on the site is in one of them. The shared rules texts of the prompts '
+              f'are under <code>decisions/contexts/</code> ({count(S["decision_files"])} files).</p></section>'
             + f'<section class="card" id="status"><h2>Analysis status</h2>{status_list(S)}</section>'
             + '<section class="card" id="versions"><h2>Versions</h2><dl class="facts">'
               '<dt>v3</dt><dd>Prompt bg-v2, plays in a seeded random order, invalid answers not retried. Leagues 1 to 3 and the shared positions.</dd>'
@@ -1755,59 +1716,15 @@ def more_pages(rel: str, label: str = "More pages") -> str:
 
 # --- Highlights, Experiments, About (Ümit #2901) --------------------------------------------------------------------
 
-# Highlights (Ümit #2938 item 4): decision slots, each one decision (board, the model's play, the engine's play) and its
-# short story; content/highlights.json names them. A slot's decision is read from the Every decision export and its
-# stated facts (content/highlights.json "facts") must be the exported decision's, or the build fails; its story comes
-# from Ümit / Claude, until then it is marked Story coming. Under the slots, four finding cards (highlight_cards.py,
-# Ümit #4178), each number checked against the built site.
-HIGHLIGHTS = json.loads((CONTENT_DIR / "highlights.json").read_text())["slots"]
-STORY_COMING = "Story coming"
-
-
-def exported_decision(out: Path, dataset: str, slug: str, did: int) -> tuple[dict, int]:
-    """(the decision as exported, its page number) from decisions/<dataset>/<slug>/<page>.json.gz."""
-    import gzip
-    files = [p for p in (out / "decisions" / dataset / slug).glob("*.json.gz") if re.fullmatch(r"\d+\.json\.gz", p.name)]
-    for p in sorted(files, key=lambda p: int(p.name.split(".")[0])):
-        for d in json.loads(gzip.decompress(p.read_bytes()))["decisions"]:
-            if d["id"] == did:
-                return d, int(p.name.split(".")[0])
-    raise ValueError(f"content/highlights.json: decision {did} is not in the {dataset}/{slug} export")
-
-
-def highlight_slot(S, out: Path, i: int, h: dict) -> str:
-    head = f'<section class="card highlight-slot" id="highlight-{i}"'
-    coming = f'<p class="note">{status_badge(STORY_COMING)} The story will be added here.</p>'
-    from board import board_svg
-    d, page = exported_decision(out, h["dataset"], h["setup"], h["decision"])
-    me, best = d["plays"][d["chosen"]], d["plays"][d["best"]]
-    f = h["facts"]
-    shown = dict(model_play=me["notation"], model_hitting_rolls=me["hitting_rolls"], best_play=best["notation"],
-                 best_hitting_rolls=best["hitting_rolls"], equity_difference=round(best["equity"] - me["equity"], 4))
-    if shown != f:
-        raise ValueError(f"content/highlights.json slot {i}: stated facts {f} are not the exported decision's {shown}")
-    svg = board_svg(d["board"], d["dice"], d["pips"], play=best["notation"], alt=me["notation"], cls="bd hl-board",
-                    label_extra=f"Solid arrows: the engine's best play, {best['notation']}. Dashed: the model's play, "
-                                f"{me['notation']}.")
-    href = f'../decisions/?d={h["dataset"]}&amp;s={h["setup"]}&amp;p={page}#d{h["decision"]}'
-    shot = lambda n: f"the opponent hits with {count(n)} of 36 rolls"  # noqa: E731  (Every decision's wording)
-    facts = (f'<dl class="facts"><dt>Dice</dt><dd>{d["dice"][0]}-{d["dice"][1]}</dd>'
-             f'<dt>The model played</dt><dd><code>{esc(me["notation"])}</code>: {shot(me["hitting_rolls"])}</dd>'
-             f'<dt>The engine\'s best play</dt><dd><code>{esc(best["notation"])}</code>: {shot(best["hitting_rolls"])}, '
-             f'worth {fmt(f["equity_difference"], 3)} more in equity (GNU Backgammon 2-ply)</dd></dl>')
-    return (f'{head} data-slot="filled"><h2>{esc(h["title"])}</h2><div class="highlight-body">'
-            f'<figure class="hero-board">{svg}</figure><div>{facts}{coming}'
-            f'<p><a href="{href}">This decision</a></p></div></div></section>')
-
-
-def highlights_page(S, out: Path) -> str:
+# Highlights: four finding cards (highlight_cards.py, Ümit #4178), each number checked against the built site. The
+# decision slots (one decision's board with the model's and the engine's play) are gone: no bench publishes its
+# questions (Ümit via Zeki #11048, #11050).
+def highlights_page(S) -> str:
     import highlight_cards as HC
-    slots = "".join(highlight_slot(S, out, i, h) for i, h in enumerate(HIGHLIGHTS, 1))
-    slots += "".join(HC.card_html(c, status_badge) for c in HC.cards(S))
-    return (page_head(S, "Highlights", "Highlights", "A single decision with the board, the model's play and the "
-                      "engine's play, then findings the site already shows, each with its numbers and the page it "
-                      'comes from. Every decision is on <a href="../decisions/">Decisions</a>.')
-            + f'<div class="highlight-slots">{slots}</div>')
+    cards = "".join(HC.card_html(c, status_badge) for c in HC.cards(S))
+    return (page_head(S, "Highlights", "Highlights", "Findings the site already shows, each with its numbers and the "
+                      "page it comes from.")
+            + f'<div class="highlight-slots">{cards}</div>')
 
 
 def experiments_page(S) -> str:
@@ -2161,45 +2078,28 @@ def decisions_page(S, body: str) -> str:
     links = ('<nav class="face-nav decisions-links" aria-label="More on decisions">'
              + "".join(f'<a href="../{h}">{esc(t)}</a>' for h, t in DECISION_PAGES) + '</nav>')
     head_end = body.index("</section>") + len("</section>")
-    # Each setup as the site shows it (official name and tag, Ümit #4445), by dataset and the name decisions/index.json
-    # keys it by (that file is part of the results hash and keeps the name): decisions.js shows these.
-    shown = {ds: {n: name_text(n, ds) for n in setups} for ds, setups in S["decisions_export"].items()}
-    labels = (f'<script type="application/json" id="setup-labels">'
-              f'{json.dumps(shown, ensure_ascii=False, sort_keys=True).replace("</", "<\\/")}</script>')
-    return (body[:head_end] + links + body[head_end:] + labels
+    return (body[:head_end] + links + body[head_end:]
             + f'<p class="version version-line">{esc(version_line(S))}</p>')
 
 
 def share_card(S) -> str:
-    """The link preview card (1200 x 630), drawn from the current results: the board beside the question."""
-    from board import board_svg
-    sc = S.get("showcase")
+    """The link preview card (1200 x 630), drawn from the current results: the title and the counts."""
     c = S["counts"]
-    css = (SITE_CSS_DIR / "decisions.css").read_text()
-    board = board_svg(sc["board"], sc["dice"], sc["pips"], play=sc["best"]["notation"],
-                      alt=sc["best_safe"]["notation"]) if sc else ""
-    cap = (f'{esc(sc["label"])}, stake {eq(sc["stake"])}: the engine\'s best play {esc(sc["best"]["notation"])} (arrows) '
-           f'leaves {sc["best"]["hitting_rolls"]} hitting rolls; the best safe play (dashed) '
-           f'leaves {sc["best_safe"]["hitting_rolls"]}.') if sc else ""
     return f"""<!doctype html><html><head><meta charset="utf-8"><style>
-{css}
-:root{{--text:#e2e8f0;--text-2:#94a3b8;--sans:system-ui,sans-serif;--bd-frame:#3d3226;--bd-felt:#1e293b;--bd-a:#6b5a43;--bd-b:#2f6f63;--bd-tray:#162032;--bd-num:#94a3b8;--bd-me:#ebe9e4;--bd-me-edge:#0e0e0d;--bd-opp:#9a3b2e;--bd-opp-edge:#f0b8ad;--bd-die:#ebe9e4;--bd-die-edge:#0e0e0d;--bd-pip:#1a1a18}}
-body{{margin:0;width:1200px;height:630px;background:#0f172a;color:#e2e8f0;font-family:system-ui,sans-serif;display:flex;gap:44px;align-items:center;padding:0 56px;box-sizing:border-box}}
-.l{{flex:0 0 520px}} .l svg{{width:520px;height:auto;display:block}} .l p{{font-size:17px;color:#94a3b8;margin:12px 0 0;line-height:1.35}}
-.r{{flex:1}} h1{{font-size:50px;margin:0 0 18px;line-height:1.08}} .s{{font-size:23px;color:#cbd5e1;margin:0 0 26px;line-height:1.3}}
-ul{{list-style:none;padding:0;margin:0;display:flex;gap:28px}} li b{{display:block;font-size:40px;color:#2dd4bf}} li{{font-size:18px;color:#94a3b8}}
+body{{margin:0;width:1200px;height:630px;background:#0f172a;color:#e2e8f0;font-family:system-ui,sans-serif;display:flex;align-items:center;padding:0 96px;box-sizing:border-box}}
+h1{{font-size:64px;margin:0 0 22px;line-height:1.08}} .s{{font-size:28px;color:#cbd5e1;margin:0 0 40px;line-height:1.3}}
+ul{{list-style:none;padding:0;margin:0;display:flex;gap:48px}} li b{{display:block;font-size:48px;color:#2dd4bf}} li{{font-size:20px;color:#94a3b8}}
 .f{{position:absolute;bottom:26px;right:56px;font-size:17px;color:#64748b}}</style></head><body>
-<div class="l">{board}<p>{cap}</p></div>
-<div class="r"><h1>{esc(TITLE)}</h1><p class="s">{esc(SUBTITLE)}</p>
+<div><h1>{esc(TITLE)}</h1><p class="s">{esc(SUBTITLE)}</p>
 <ul><li><b>{count(c["decisions_scored"])}</b>decisions</li><li><b>{c["leagues"]}</b>leagues</li><li><b>{c["model_setups"]}</b>setups</li><li><b>{c["models"]}</b>models</li></ul></div>
-<div class="f">Hilde · every decision is public</div></body></html>"""
+<div class="f">Hilde</div></body></html>"""
 
 
 def description(S) -> str:
     c = S["counts"]
     return (f"{TITLE} {SUBTITLE} Models play backgammon, and GNU Backgammon scores every move they make: {count(c['decisions_scored'])} "
             f"decisions, {count(c['model_setups'])} setups, {count(c['leagues'])} leagues. We measure whether each risk a "
-            f"model takes is the right one, and what that costs. Every decision is public.")
+            f"model takes is the right one, and what that costs.")
 
 
 # --- Write ----------------------------------------------------------------------------------------------------
@@ -2229,15 +2129,15 @@ def write_all(S, out: Path, base: str) -> None:
     moved = {k: v for k, v in moved.items() if k not in ids_of(home_html)}
     moved["headline-table"] = "#leaderboard"  # the leaderboard's old table: its block on the bench kit (story.leaderboard)
     home_html += f'<script type="application/json" id="moved-anchors">{json.dumps(moved, sort_keys=True)}</script>'
-    put("", TITLE, home_html, scripts=("bg.js", "zw-ui.js"), styles=("decisions.css", "zw-ui.css"), body_class="home")
+    put("", TITLE, home_html, scripts=("bg.js", "zw-ui.js"), styles=("zw-ui.css",), body_class="home")
     home.fragments(S, out)
-    put("leagues/", "Leagues", leagues, scripts=("bg.js",), styles=("decisions.css",))
+    put("leagues/", "Leagues", leagues, scripts=("bg.js",))
     put("nackgammon/", "Nackgammon", nack, scripts=("bg.js",), dataset="nackgammon",
         description="The Nackgammon paired test of the backgammon benchmark (finished): does a model still play well "
                     "when the starting position changes? Per-setup tables, the chart and the method.")
     put("matches/", "Matches", matches_page(S), scripts=("bg.js",),
         description="Every match of the backgammon benchmark: the leagues, the ladder rounds, gap matches, late "
-                    "entries, the Hype Cup and the Nackgammon knockout, with scores, winners and links to the decisions.")
+                    "entries, the Hype Cup and the Nackgammon knockout, with scores and winners.")
     put("phases/", "Phases", phases_page(S), scripts=("bg.js",))
     put("vision/", "Vision", vision_page(S))
     put("compare/", "Compare", compare_page(S), scripts=("bg.js",), dataset="v1-set")
@@ -2277,11 +2177,9 @@ def write_all(S, out: Path, base: str) -> None:
     for path, title, body in improve_page.registration_pages(S["improve"]):
         put(path, title, body, dataset="improve")
     put("data/", "Data", data_page(S, out))
-    put("decisions/", "Every decision", decisions_page(S, decisions_export.body()),
-        scripts=("decisions.js",), styles=("decisions.css",))
-    put("highlights/", "Highlights", highlights_page(S, out), styles=("decisions.css",),
-        description="Highlights of the backgammon benchmark: a single decision with the board, the model's play and "
-                    "the engine's play, then findings the site already shows, each with its numbers.")
+    put("decisions/", "Every decision", decisions_page(S, decisions_export.body(S["decision_contexts"])))
+    put("highlights/", "Highlights", highlights_page(S),
+        description="Highlights of the backgammon benchmark: findings the site already shows, each with its numbers.")
     put("experiments/", "Experiments", experiments_page(S),
         description="Experiments of the backgammon benchmark: Clear risk, Nackgammon and Learning from experience.")
     put("about/", "About", about_page(S, method_html),

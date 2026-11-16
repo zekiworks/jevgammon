@@ -1228,32 +1228,7 @@ def tab_body(S, key: str) -> str:
             + f'<p class="table-note">{esc(LIMIT_PAIRED)}</p>')
 
 
-# --- Hero, findings, filters -------------------------------------------------------------------------------
-
-CALL_WORDS = {"right_risk": "a right risk", "wrong_risk": "a wrong risk", "missed": "a missed risk",
-              "needless": "a needless risk", "right_safety": "right safety"}
-
-
-def hero_board(S) -> str:
-    sc = S.get("showcase")
-    if not sc:
-        return ""
-    from board import board_svg
-    b, s, c = sc["best"], sc["best_safe"], sc["chosen"]
-    svg = board_svg(sc["board"], sc["dice"], sc["pips"], play=b["notation"], alt=s["notation"], cls="bd hero-bd",
-                    label_extra=f"Solid arrows: the engine's best play, {b['notation']}. Dashed: the best safe play, {s['notation']}.")
-    code = lambda p: f'<code>{esc(p["notation"])}</code>'
-    text = (f'{esc(sc["label"])}, dice {sc["dice"][0]}-{sc["dice"][1]}, stake {P.eq(sc["stake"])}: the engine\'s best play '
-            f'{code(b)} leaves {count(b["hitting_rolls"])} hitting rolls, the best safe play {code(s)} (dashed) '
-            f'leaves {count(s["hitting_rolls"])}. {esc(sc["who"])} played {code(c)}: {esc(CALL_WORDS[sc["call"]])}.')
-    href = f'decisions/?d={sc["dataset"]}&amp;s={sc["slug"]}&amp;p={sc["page"]}#d{sc["id"]}'
-    return f'<figure class="hero-board">{svg}<figcaption>{text} <a href="{href}">This decision</a></figcaption></figure>'
-
-
-def hero_figure(S) -> str:
-    """The showcase decision, under the leaderboard (Ümit via Zeki #4666: nothing but the heading above the table)."""
-    fig = hero_board(S)
-    return f'<section class="card hero-showcase">{fig}</section>' if fig else ""
+# --- Findings, filters -------------------------------------------------------------------------------------
 
 
 def findings_block(S) -> str:
@@ -1747,10 +1722,9 @@ def facts(S) -> str:
             ("Decisions scored", f'{count(S["counts"]["decisions_scored"])}'),
             ("Leagues", lg_text),
             ("Results", f'<code>{esc(S["hash"])}</code>, data as of {esc(P.as_of(S))}'),
-            ("Published", 'Every decision: the position, every legal play and the engine\'s equity for each '
-                          '(<a href="decisions/">Every decision</a>, <a href="decisions/index.json" download="decisions.json">'
-                          'decisions.json</a>); every result per setup (<a href="data/results.json" download="results.json">'
-                          'results.json</a>). No internal address, key or request header.')]
+            ("Published", 'Every result per setup (<a href="data/results.json" download="results.json">results.json</a>). '
+                          'Not published: the positions, the plays chosen in them and the engine\'s best play for each '
+                          '(<a href="decisions/">why</a>). No internal address, key or request header.')]
     return '<dl class="facts provenance">' + "".join(f"<dt>{k}</dt><dd>{v}</dd>" for k, v in rows) + "</dl>"
 
 
@@ -1843,7 +1817,6 @@ def home(S) -> str:
     return f"""
     {FAMILY_ICONS}
     {story.leaderboard(S)}
-    {hero_figure(S)}
     {story.findings(S)}
     {findings_block(S)}
     {how_scores(S)}"""

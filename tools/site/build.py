@@ -529,8 +529,10 @@ def main():
         out, S["_state"] / "snap.db", S["_state"] / "plays", S["_state"] / "prompts.db", [lg["id"] for lg in S["leagues"]])
     S["decision_files"] = sum(1 for p in (out / "decisions").rglob("*") if p.is_file())
     # No longer published (no bench publishes its questions, Ümit via Zeki #11048, #11050): the hero's decision and the
-    # Every decision viewer. The build writes on top of the published site, so their old files are removed here.
-    for gone in ("data/showcase.json", "decisions.js", "decisions.css"):
+    # Every decision viewer; and Hilde Reader's own favicons, replaced by the suite's tab icon (Ümit #11630). The build
+    # writes on top of the published site, so their old files are removed here.
+    for gone in ("data/showcase.json", "decisions.js", "decisions.css", "hilde-favicon-16.png", "hilde-favicon-32.png",
+                 "hilde-apple-touch-180.png"):
         (out / gone).unlink(missing_ok=True)
     # The combined score page's feed (turkce #4062), at the site's root: from the leaderboard's own rows and numbers.
     write_json(out, bench_scores.PATH, bench_scores.build(S))

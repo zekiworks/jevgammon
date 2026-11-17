@@ -366,7 +366,7 @@ def layout(S, base, path: str, title: str, body: str, description: str | None = 
   <meta name="twitter:title" content="{esc(social)}"><meta name="twitter:description" content="{esc(desc)}">
   {og}
   <meta name="color-scheme" content="dark light">
-  <link rel="icon" type="image/png" sizes="32x32" href="{rel}hilde-favicon-32.png"><link rel="icon" type="image/png" sizes="16x16" href="{rel}hilde-favicon-16.png"><link rel="apple-touch-icon" href="{rel}hilde-apple-touch-180.png">
+  <link rel="icon" type="image/svg+xml" href="{rel}hilde-bench-icon.svg"><link rel="icon" type="image/png" sizes="32x32" href="{rel}hilde-bench-icon-32.png"><link rel="icon" type="image/png" sizes="16x16" href="{rel}hilde-bench-icon-16.png"><link rel="apple-touch-icon" sizes="180x180" href="{rel}hilde-bench-icon-180.png">
   {HEAD_SCRIPT}{kit}
   {css}
   {js}

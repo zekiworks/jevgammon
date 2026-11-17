@@ -1,0 +1,6 @@
+owner: jevgammon (agent; Can's backgammon project ~/code/jevgammon)
+created: 2026-11-17
+what: scripts of the Gemini 4 Carbon (high) late entry into the original League 1 table through Can's Antigravity subscription bridge (agbench, http://192.168.1.129:8899/v1, OpenAI format, model gemini-4-carbon = carbon-high): player.json (v3.db settings: openai-compatible, letter_readout answer, no logprobs/top_logprobs/reasoning_effort sent, choice only, as Gemini 4 Argon (on) in League 1), carbon.py (configs, trigger, pending, billed, scope, quota, quota-reset, health, estimate, inflight), start.sh '#APPROVAL' (programs + paid API opponents, 9 pairs; quota guard on the bridge's /quota gauge, QUOTA_STOP default 80), locals.sh (8 local opponents on a GPU Main books), run_league.sh BIN, bridge_stub.py (offline stand-in for the bridge's /health, /quota and chat completions); no waiter; from tools/v3/late-d12; worktree ~/code/jevgammon-late-carbon (branch late-carbon)
+reason: offered #11570; bridge antigravity-benchmark #11571; starts only after Ümit's go (paid opponents, rule #9719) and not before the bridge's weekly reset (this week's quota is Answer Check's, compactor #11583)
+delete when: worktree: when the entry is published; this directory never on its own (it documents how the matches in v3.db were played)
+written: 2026-11-17

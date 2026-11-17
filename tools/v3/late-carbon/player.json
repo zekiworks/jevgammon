@@ -1,0 +1,13 @@
+{
+  "name": "Gemini 4 Carbon (high)",
+  "spec": "openai-compatible/gemini-4-carbon",
+  "provider": "antigravity-subscription",
+  "base_url": "http://192.168.1.129:8899/v1",
+  "reasoning": "high",
+  "request": {"reasoning_effort": null, "logprobs": null, "top_logprobs": null},
+  "letter_readout": "answer",
+  "price": {"input_per_mtok": 2.0, "output_per_mtok": 10.0},
+  "note": "Google Antigravity subscription (Google AI Ultra, Can's login) through Can's agbench bridge (antigravity-benchmark, bus #11571): an OpenAI-compatible chat endpoint on Can's Mac that drives the Antigravity app (agentapi), model gemini-4-carbon = Antigravity's gemini-4-carbon-high, thinking level high (the highest of low, medium, high), a fresh conversation per request; the app adds its own context (~11k input tokens) and ignores temperature and max_tokens. Same letter prompt, letter constrained to the options (json_schema enum, which the bridge takes as response_format) and choice-only answer as Gemini 4 Argon (on) and Gemini 3.8 Flash (high) in League 1 (no logprobs: the request leaves out logprobs, top_logprobs and reasoning_effort, the thinking level is the model id's). Cost is API-list-price equivalent ($2/$10 per million tokens through 2026-11-30, $4/$20 from 2026-12-01); $0 billed. Late entry to the original League 1 table; not eligible for the Hype Cup",
+  "parallel": 4,
+  "max_matches": 2
+}

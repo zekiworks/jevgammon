@@ -28,6 +28,10 @@ MORE_PAGES = [("matches/", "Matches"), ("phases/", "Phases"), ("compare/", "Comp
               ("method/", "Method"), ("data/", "Data")]
 SITE_NAME = "Backgammon bench"
 LEAF = "hilde-leaf-transparent.png"  # Hilde Reader's mark, byte-identical (zekiworks/hilde dd56ed2f; Ümit #10114, turkce #10173)
+# The suite's tab icon, asked for with the file's sha256 (first 8 hex) so a changed icon gets a new address and
+# browsers show it without a reload (Ümit #12249, turkce #12254).
+ICON_V = {n: __import__("hashlib").sha256((Path(__file__).resolve().parent / "assets" / n).read_bytes()).hexdigest()[:8]
+          for n in ("hilde-bench-icon.svg", "hilde-bench-icon-16.png", "hilde-bench-icon-32.png", "hilde-bench-icon-180.png")}
 TITLE = "Backgammon: do models take the right risks, and do they learn from their games?"
 # The learning pilot's tab name inside its page (Ümit #2553/#2557) and its address.
 TAB_LEARNING = "Learning across games"
@@ -366,7 +370,7 @@ def layout(S, base, path: str, title: str, body: str, description: str | None = 
   <meta name="twitter:title" content="{esc(social)}"><meta name="twitter:description" content="{esc(desc)}">
   {og}
   <meta name="color-scheme" content="dark light">
-  <link rel="icon" type="image/svg+xml" href="{rel}hilde-bench-icon.svg"><link rel="icon" type="image/png" sizes="32x32" href="{rel}hilde-bench-icon-32.png"><link rel="icon" type="image/png" sizes="16x16" href="{rel}hilde-bench-icon-16.png"><link rel="apple-touch-icon" sizes="180x180" href="{rel}hilde-bench-icon-180.png">
+  <link rel="icon" type="image/svg+xml" href="{rel}hilde-bench-icon.svg?v={ICON_V['hilde-bench-icon.svg']}"><link rel="icon" type="image/png" sizes="32x32" href="{rel}hilde-bench-icon-32.png?v={ICON_V['hilde-bench-icon-32.png']}"><link rel="icon" type="image/png" sizes="16x16" href="{rel}hilde-bench-icon-16.png?v={ICON_V['hilde-bench-icon-16.png']}"><link rel="apple-touch-icon" sizes="180x180" href="{rel}hilde-bench-icon-180.png?v={ICON_V['hilde-bench-icon-180.png']}">
   {HEAD_SCRIPT}{kit}
   {css}
   {js}

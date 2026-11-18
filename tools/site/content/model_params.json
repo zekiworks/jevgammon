@@ -1484,6 +1484,44 @@
    "card_active_b": null,
    "card_source": "https://huggingface.co/apertixai/cerno-9b-v1.2",
    "card_quote": "'Jev-style System One decision model · 9B · one forward pass · calibrated probabilities · block attention · read twice'; 'v1.2 (2026-10-30): a new 9B, trained from the post-trained Qwen3.5-9B with block-bidirectional attention and served with read twice.'"
+  },
+  "Karpo Decision 31B": {
+   "total_b": 31.27,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/MachinePulseAI/karpo-decision-31B/tree/d69cdd57eab23271cbe65236ca8a00d80d7bb8c7",
+   "quote": "MachinePulseAI/karpo-decision-31B @ d69cdd57eab23271cbe65236ca8a00d80d7bb8c7: backbone 31,273,086,512 = the 12 shards' tensor elements 31,273,088,876 (1,188 tensors, all BF16; safetensors headers, index total_size 62,546,177,752 bytes; Hugging Face's safetensors total 31,273,088,876, the shards only) minus Gemma 4's buffers model.vision_tower.std_bias 1,152 + std_scale 1,152 + 60 x layer_scalar 1 = 2,364 (as for KnowLine 31B Gen1.5 and Turion Jev 31B; the same count as google/gemma-4-31B-it, whose fine-tune it is, incl. its vision encoder) + decision readout readout.safetensors 1,370,880 (one F32 tensor, 255 x 5,376) = 31,274,457,392.",
+   "checked": [
+    "https://huggingface.co/api/models/MachinePulseAI/karpo-decision-31B/revision/d69cdd57eab23271cbe65236ca8a00d80d7bb8c7",
+    "https://huggingface.co/MachinePulseAI/karpo-decision-31B/raw/d69cdd57eab23271cbe65236ca8a00d80d7bb8c7/README.md"
+   ],
+   "read": "2026-11-18",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors headers on bariton: 31.27B incl. its vision encoder (the backbone's; served text only) and the 1.4M decision readout; the card states 31.3B in bf16 plus the readout, the figure shown (Ümit #4260). Served in BF16 by the package's own karpo_decision.serve.server (karpo-decision 0.1.0) on compactor's card, which plays our late entry. Plays with up to 255 options per request (the league's usual rule and its 255 answer codes); no request is over its limits (v3.db's longest stored request is 29,147 tokens of its 32,768).",
+   "terms": "31.27B: backbone 31.27B incl. its vision encoder + decision readout 1.4M; card: 31.3B",
+   "card_total_b": 31.3,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/MachinePulseAI/karpo-decision-31B",
+   "card_quote": "'# Karpo Decision 31B'; 'Fine-tuned from google/gemma-4-31B-it, with a linear readout over the options.'; '**Parameters:** 31.3B in bf16, plus a 255 × 5,376 readout in fp32'."
+  },
+  "KnowLine-31B-Gen2": {
+   "total_b": 31.27,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/PelaAI/KnowLine-31B-Gen2/tree/fd99a9ed2255d8a67dd47a44cc429e638f611593",
+   "quote": "PelaAI/KnowLine-31B-Gen2 @ fd99a9ed2255d8a67dd47a44cc429e638f611593, model.safetensors.index.json shards (13 files, 1,188 tensors, all BF16; language model and vision encoder; no separate head file): 31,273,086,512 parameters = all tensor elements 31,273,088,876 (the shards' safetensors headers; index total_size 62,546,177,752 bytes; Hugging Face's safetensors total 31,273,088,876) minus buffers model.vision_tower.std_bias 1,152 + std_scale 1,152 + 60 x layer_scalar 1 = 2,364 (as for KnowLine 31B Gen1.5); the same count as google/gemma-4-31B-it, whose LoRA fine-tune merged into the weights it is (dense).",
+   "checked": [
+    "https://huggingface.co/api/models/PelaAI/KnowLine-31B-Gen2/revision/fd99a9ed2255d8a67dd47a44cc429e638f611593",
+    "https://huggingface.co/PelaAI/KnowLine-31B-Gen2/raw/fd99a9ed2255d8a67dd47a44cc429e638f611593/README.md"
+   ],
+   "read": "2026-11-18",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the 13 shards' safetensors headers on bariton (the snapshot's SHA256SUMS verified for code and configs): 31.27B incl. its vision encoder (the base model's, unchanged; served text only). The card states about 31B, the figure shown. Served in BF16 by the repo's serve_knowline.sh (SGLang 0.5.23, then knowline_server.py, read twice up to 3,000 tokens) on compactor's card, which plays our late entry. Plays with up to 255 options per request (the league's usual rule); no request is over its limits (v3.db's longest stored request is 28,783 tokens; the card's KV pool holds 29,382).",
+   "terms": "31.27B incl. its vision encoder; card: about 31B",
+   "card_total_b": 31,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/PelaAI/KnowLine-31B-Gen2",
+   "card_quote": "'# KnowLine-31B-Gen2'; card table: 'Base model | google/gemma-4-31B-it (Apache-2.0): dense, about 31B parameters'; 'Training | LoRA supervised fine-tuning of the language model component, merged into bf16 weights'."
   }
  }
 }

@@ -6,6 +6,10 @@ question reported by /health (GET /stats for every kind). Kinds (the server each
 with 422 / 404 / 400):
 
   knowline    knowline_server.py: model field "m"; 2..255 options
+  knowline-gen2  KnowLine-31B-Gen2's knowline_server.py as serve_knowline.sh starts it: as knowline; /health with the
+              real server's fields (read twice, box gemma / yxyx, no calibration, no URL assets)
+  karpo       karpo_decision.serve.server: model field ignored; only POST /v1/systemone (404 otherwise); 2..255
+              options; GET /healthz with the real server's fields as compactor serves it (no /health: 404)
   startlux    startlux-decide serve: no model field needed (ignored); 2..255 options (knocked out by the server)
   onejev      flide serve --name OmniJev/OneJev1.6-0.8B: model field that name (404 otherwise); 2..255 options
   gliclass    gliclass_server.py: model field absent or knowledgator/gliclass-v4-edge; no GET route (501); refuses
@@ -36,6 +40,7 @@ STRANDS_CAP, METASK_CAP = 13, 11
 CAP = {"gliclass": 218, "glide-0.4b": 74, "strands": STRANDS_CAP, "metask": METASK_CAP}.get(KIND, 255)
 MODEL_RULE = {
     "knowline": lambda m: m == "m",
+    "knowline-gen2": lambda m: m == "m",
     "onejev": lambda m: m == "OmniJev/OneJev1.6-0.8B",
     "gliclass": lambda m: m in (None, "knowledgator/gliclass-v4-edge"),
     "d1": lambda m: m in (None, "LiquidAI/d1-2B"),
@@ -46,6 +51,15 @@ REFUSED = {"d1": 400, "d1-omni": 400, "metask": 400}.get(KIND, 422)
 STRANDS_HEALTH = {"model": "strands-decider-2b", "checkpoint": "/home/cbasaran/code/strands-decider/model",
                   "base_model": "Qwen/Qwen3.5-2B-Base", "num_slots": 24, "max_length": 4096,
                   "temperature": 0.935220152138837, "device": "cuda", "prefix_cache": True, "vision": False}
+KNOWLINE_GEN2_HEALTH = {"status": "ok", "model": "m", "temperature": 1.0,
+                        "layout": {"header": False, "header_min_questions": 1, "read_twice": True,
+                                   "twice_max_tokens": 3000, "referenced_fields": False},
+                        "box": {"backend": True, "prompt": "gemma", "template": None, "coords": "yxyx",
+                                "calibration": None},
+                        "url_assets": False}
+KARPO_HEALTH = {"ok": True, "model": "karpo-decision", "ranks": 1,
+                "gpu": "NVIDIA RTX PRO 6000 Blackwell Workstation Edition", "attention": "bidirectional",
+                "path": "plain", "kernels": [], "max_length": 32768}
 LOCK = threading.Lock()
 STATS = {"requests": 0, "refused": 0, "most_options": 0, "options_seen": {}}
 
@@ -78,11 +92,15 @@ class Handler(BaseHTTPRequestHandler):
                 self.send(200, {"stub": KIND, "cap": CAP, **STATS})
         elif KIND in ("gliclass", "metask"):
             self.send(501, {"error": "no GET route"})
+        elif KIND == "karpo":
+            self.send(*((200, KARPO_HEALTH) if self.path.startswith("/healthz") else (404, {"error": "not found"})))
         elif self.path.startswith("/health"):
             if D1_MODEL:
                 self.send(200, {"status": "ok", "model": D1_MODEL})
             elif KIND == "strands":
                 self.send(200, {"status": "ok", **STRANDS_HEALTH})
+            elif KIND == "knowline-gen2":
+                self.send(200, KNOWLINE_GEN2_HEALTH)
             else:
                 with LOCK:
                     self.send(200, {"status": "ok", "stub": KIND, "cap": CAP, **STATS})
@@ -91,6 +109,10 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):  # noqa: N802
         body = json.loads(self.rfile.read(int(self.headers.get("Content-Length") or 0)))
+        if KIND == "karpo" and self.path != "/v1/systemone":
+            with LOCK:
+                STATS["refused"] += 1
+            return self.send(404, {"error": {"message": "not found"}})
         if not MODEL_RULE(body.get("model")):
             with LOCK:
                 STATS["refused"] += 1

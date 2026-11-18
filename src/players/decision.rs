@@ -247,6 +247,9 @@ pub const SERVICES: &[Service] = &[
     // never truncates: SGLang (no --allow-auto-truncate) refuses a prompt longer than its context
     // or KV pool and the front end answers 422, which fails the decision. League 1's longest
     // single request, 251 options, is 27,849 Gemma 4 tokens; spark2's pool holds 53,181.
+    // KnowLine-31B-Gen2 (@ fd99a9e) behind its own knowline_server.py the same way (read twice
+    // up to 3,000 tokens, the box options unused here): v3.db's longest stored request is 28,783
+    // tokens with its front end; compactor's bariton card (SGLang 0.5.23, MEM 0.85) pools 29,382.
     Service {
         provider: "knowline",
         label: "KnowLine (local)",
@@ -387,6 +390,25 @@ pub const SERVICES: &[Service] = &[
         label: "Turion Jev (local)",
         base_url: "http://127.0.0.1:19380",
         url_var: "TURION_JEV_BASE_URL",
+        path: "/v1/systemone",
+        key_vars: &[],
+        key_required: false,
+        default_model: None,
+        openai_format: false,
+        max_choices: 255,
+    },
+    // MachinePulse's karpo-decision-31B (@ d69cdd5; Gemma 4 31B fine-tune, bidirectional
+    // attention, a linear readout over 255 answer codes) behind the server its package ships
+    // (karpo-decision 0.1.0 @ ac40d39, `torchrun -m karpo_decision.serve.server`, BF16): the
+    // System One request at /v1/systemone; the model field is ignored (it answers with its
+    // --name), so none is sent; text only. 255 options per question (more is refused, 422). It
+    // never truncates: a question longer than --max-length (32,768 tokens by default) is refused
+    // (422). v3.db's longest stored request is 29,147 tokens with its encoder (karpo-blocks-v1).
+    Service {
+        provider: "karpo",
+        label: "Karpo Decision (local)",
+        base_url: "http://127.0.0.1:18440",
+        url_var: "KARPO_BASE_URL",
         path: "/v1/systemone",
         key_vars: &[],
         key_required: false,

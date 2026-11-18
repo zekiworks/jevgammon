@@ -1,0 +1,11 @@
+{
+  "name": "Karpo Decision 31B",
+  "spec": "karpo",
+  "provider": "local (karpo_decision.serve.server)",
+  "quantization": "bf16",
+  "base_url": "http://127.0.0.1:18440",
+  "note": "MachinePulse's Karpo Decision 31B (Hugging Face MachinePulseAI/karpo-decision-31B @ d69cdd57eab23271cbe65236ca8a00d80d7bb8c7, MachinePulse Community License; a fine-tune of google/gemma-4-31B-it in BF16, bidirectional attention, a linear readout over 255 answer codes in FP32 (readout.safetensors), template karpo-blocks-v1, temperatures 1.0) on our GPU through the server its package ships, as the card runs it: torchrun --standalone --nproc_per_node 1 -m karpo_decision.serve.server --checkpoint <snapshot> --host 127.0.0.1 --port 18440 (karpo-decision 0.1.0 from github.com/machinepulse-ai/karpo-decision @ ac40d399, compactor's env exp-grpo/.venv-karpo: torch 2.15.0, transformers 5.23.0; plain path: no --fp8, --graphs or --triton-attention; --max-length at its default 32,768), run by compactor (runs/gpu0-serve-15nov.sh karpo-decision-31b). Request at /v1/systemone, no model field (the server ignores it and answers with its name karpo-decision), text only; usage gives its input tokens. 255 options per request (the league's rule and the model's 255 codes; more is refused, 422; longer lists split). Never truncates: a question over 32,768 tokens is refused (422). v3.db's longest stored System One request (248 options) is a 29,147-token sequence with its encoder and tokenizer (the 287 distinct longest stored requests counted, every one over 43,000 characters); none over.",
+  "device": "NVIDIA RTX PRO 6000 Blackwell (96 GB) on bariton, compactor's card (GPU 3 on 18 Nov): HF_HUB_OFFLINE=1 CUDA_VISIBLE_DEVICES=<card uuid> /home/cbasaran/code/compactor/exp-grpo/.venv-karpo/bin/torchrun --standalone --nproc_per_node 1 -m karpo_decision.serve.server --checkpoint <snapshot> --host 127.0.0.1 --port 18440 (= compactor's runs/gpu0-serve-15nov.sh serve karpo-decision-31b)",
+  "parallel": 1,
+  "max_matches": 1
+}

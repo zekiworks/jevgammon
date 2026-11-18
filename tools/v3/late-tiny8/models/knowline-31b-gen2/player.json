@@ -1,0 +1,11 @@
+{
+  "name": "KnowLine-31B-Gen2",
+  "spec": "knowline/m",
+  "provider": "local (knowline_server.py)",
+  "quantization": "bf16",
+  "base_url": "http://127.0.0.1:18463",
+  "note": "PelaAI's KnowLine-31B-Gen2 (Hugging Face PelaAI/KnowLine-31B-Gen2 @ fd99a9ed2255d8a67dd47a44cc429e638f611593, Apache-2.0; dense, a LoRA fine-tune of google/gemma-4-31B-it (rank 32, alpha 64, language model only, one epoch) merged into BF16 weights, readout temperature 1.27 folded into the final norm weight and logit soft-cap, score questions divided by temperatures.json) on our GPU through the repo's own serve_knowline.sh as the card serves it, run by compactor (runs/gpu0-serve-15nov.sh knowline-31b-gen2) in the lmsysorg/sglang image v0.5.23 (image sha256:f832b5c3…): SGLang in BF16, --mem-fraction-static 0.85 (MEM default), --enable-fp32-lm-head, then the repo's knowline_server.py (served model name m, temperature 1, 16 scoring threads, --temperatures temperatures.json, read twice up to 3,000 tokens, box prompt gemma / yxyx, unused here). 255 options per request (the league's rule; longer lists split); never truncates: SGLang (no --allow-auto-truncate) refuses a prompt over its KV pool (29,382 tokens on this card) and the front end answers 422. v3.db's longest stored System One request (248 options) is a 28,783-token prompt with this front end and tokenizer (the 287 distinct longest stored requests counted, every one over 43,000 characters); none over.",
+  "device": "NVIDIA RTX PRO 6000 Blackwell (96 GB) on bariton, compactor's card (GPU 3 on 18 Nov): docker container cmp-knowline-31b-gen2 (lmsysorg/sglang:latest = v0.5.23, the hub mounted read-only, HF_HUB_OFFLINE=1, HOST=0.0.0.0, published on 127.0.0.1:18463): bash <snapshot>/serve_knowline.sh <snapshot> 0 18463 (front end :18463, SGLang :19463)",
+  "parallel": 1,
+  "max_matches": 1
+}

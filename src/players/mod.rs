@@ -1084,6 +1084,11 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
+    async fn karpo_sends_no_model_field() {
+        sends_every_option("karpo", None, 255, "/v1/systemone").await;
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
     async fn d1_local_names_the_served_checkpoint() {
         sends_every_option("d1-local", Some("LiquidAI/d1-2B"), 255, "/v1/systemone").await;
     }

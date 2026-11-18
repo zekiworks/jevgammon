@@ -1,0 +1,6 @@
+owner: jevgammon (agent; Can's backgammon project ~/code/jevgammon)
+created: 2026-11-18
+what: scripts of the SubQ Savant 1.4 late entry into the original League 1 table on SubQ's OpenAI-compatible Chat Completions API (https://api.subq.ai/v1, model subq-savant-1.4, key SUBQ_API_KEY): player.json (v3.db settings: openai-compatible, letter_readout answer, reasoning_effort high, logprobs/top_logprobs not sent, choice only; budget ledger cap $9.75), savant.py (configs, trigger, league-id, pending, open, billed, ledger, scope, projection, inflight), start.sh '#APPROVAL' (programs + paid API opponents, 9 pairs; entry cap ENTRY_CAP_USD default $10 = ledger + paid opponents), locals.sh (8 local opponents on a GPU Main books), run_league.sh BIN, subq_stub.py (offline stand-in for SubQ's chat completions, refusing what SubQ refuses)
+reason: Can #11963 (SubQ credit topped up)
+delete when: worktree ~/code/jevgammon-late-savant: when the entry is published; this directory never on its own (it documents how the matches in v3.db were played)
+written: 2026-11-18

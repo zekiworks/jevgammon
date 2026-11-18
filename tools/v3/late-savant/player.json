@@ -1,0 +1,21 @@
+{
+  "name": "SubQ Savant 1.4",
+  "spec": "openai-compatible/subq-savant-1.4",
+  "provider": "subq",
+  "base_url": "https://api.subq.ai/v1",
+  "api_key_env": "SUBQ_API_KEY",
+  "reasoning": "high",
+  "request": {"logprobs": null, "top_logprobs": null},
+  "letter_readout": "answer",
+  "price": {"input_per_mtok": 0.1, "output_per_mtok": 0.5},
+  "note": "SubQ Savant 1.4 (model subq-savant-1.4, pinned, not the subq-savant-latest alias; early access, enabled for our SubQ organization: GET https://api.subq.ai/v1/models lists it with our key) on SubQ's OpenAI-compatible Chat Completions API (https://api.subq.ai/v1/chat/completions, key SUBQ_API_KEY). Always reasons and always samples at temperature 1 (docs: reasoning cannot be turned off, temperature fixed at 1); reasoning_effort high sent explicitly, SubQ's default (low, high or max accepted). List price $0.10 per million input tokens ($0.01 cached), $0.50 per million output tokens, reasoning billed as output (docs.subq.ai/using-the-api/models, read 2026-11-18); turns.cost_usd counts cached input at the full input rate. Same League 1 letter prompt, letter constrained to the options (strict json_schema enum) and choice-only answer as Muse Ember (max) and Gemini 4 Carbon (high): the request leaves out logprobs and top_logprobs, which SubQ refuses for this model (400 unsupported_parameter, docs.subq.ai/endpoints/chat-completions-api). Late entry to the original League 1 table (Can #11963, 2026-11-18); not eligible for the Hype Cup.",
+  "parallel": 4,
+  "max_matches": 2,
+  "budget": {
+    "ledger": "/home/cbasaran/code/jevgammon/workspace/late-savant/state/savant-budget.db",
+    "cap_usd": 9.75,
+    "input_per_mtok": 0.1,
+    "cached_input_per_mtok": 0.01,
+    "output_per_mtok": 0.5
+  }
+}

@@ -226,16 +226,16 @@
    "note": "Open weights, but the maker states no parameter count (card, blog, docs), so classed by price (Ümit #4245).",
    "provisional": false,
    "provisional_reason": null
+  },
+  "SubQ Savant 1.4": {
+   "weights": "closed",
+   "input_per_mtok": 0.1,
+   "source": "https://docs.subq.ai/using-the-api/models",
+   "read": "2026-11-18",
+   "quote": "SubQ Savant 1.4 ... Pricing Input $0.10 / 1M tokens Cached input $0.01 / 1M tokens Output $0.50 / 1M tokens",
+   "note": "Early access, enabled per organization; output $0.50 per million tokens.",
+   "provisional": false,
+   "provisional_reason": null
   }
- },
- "SubQ Savant 1.4": {
-  "weights": "closed",
-  "input_per_mtok": 0.1,
-  "source": "https://docs.subq.ai/using-the-api/models",
-  "read": "2026-11-18",
-  "quote": "SubQ Savant 1.4 ... Pricing Input $0.10 / 1M tokens Cached input $0.01 / 1M tokens Output $0.50 / 1M tokens",
-  "note": "Early access, enabled per organization; output $0.50 per million tokens.",
-  "provisional": false,
-  "provisional_reason": null
  }
 }

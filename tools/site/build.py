@@ -208,11 +208,12 @@ def late_entry_summaries(entries: list[dict]) -> list[dict]:
     finished late-entry matches won, drawn (level score) and lost. Not played: the pairs of its field that
     content/late_entries.json lists with a reason (no score, never a loss), each marked out_of_scope when its opponent is
     outside the requested scope (common.OUT_OF_SCOPE_OPPONENTS, Ümit #5220); a listed pair that was played, or an
-    opponent outside its field, stops the build. Published once every pair of its field is played or out of scope: no
-    pair is left to play, so its numbers no longer change; else Provisional."""
+    opponent outside its field, stops the build. Published once every pair of its field is played, out of scope or
+    marked opponent_outage (the opponent's paid API unplayable for good, disclosed): no pair is left to play, so its
+    numbers no longer change; else Provisional."""
     reasons = {}
     for p in json.loads((CONTENT / "late_entries.json").read_text())["not_played"]:
-        reasons.setdefault(p["entrant"], {})[p["opponent"]] = p["reason"]
+        reasons.setdefault(p["entrant"], {})[p["opponent"]] = (p["reason"], p.get("opponent_outage", False))
     meta = load_setups()
     late = []
     for e in entries:
@@ -221,12 +222,13 @@ def late_entry_summaries(entries: list[dict]) -> list[dict]:
         record = dict(won=sum(m["score_for"] > m["score_against"] for m in done),
                       drawn=sum(m["score_for"] == m["score_against"] for m in done),
                       lost=sum(m["score_for"] < m["score_against"] for m in done))
-        not_played = []
-        for opp, why in sorted(reasons.pop(e["name"], {}).items()):
+        not_played, outages = [], {}
+        for opp, (why, outage) in sorted(reasons.pop(e["name"], {}).items()):
             if opp not in e["field"] or any(m["opponent"] == opp for m in done):
                 raise RuntimeError(f"content/late_entries.json: {e['name']} v {opp} is not an unplayed pair of its field")
             not_played.append(dict(opponent=opp, reason=why, out_of_scope=opp in OUT_OF_SCOPE_OPPONENTS))
-        closed = e["played"] + sum(g["out_of_scope"] for g in not_played)
+            outages[opp] = outage
+        closed = e["played"] + sum(g["out_of_scope"] or outages[g["opponent"]] for g in not_played)
         s = dict(e, status=PUBLISHED if closed == e["total"] else PROVISIONAL, record=record,
                  not_played=not_played, **A.dataset_summary(LATE_ENTRY, decs, [e["name"]])[e["name"]])
         # Price: its setups.json entry's (label, source, date read); billed at another price: that figure too.

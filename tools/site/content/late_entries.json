@@ -1,5 +1,5 @@
 {
- "_about": "Late-entry pairs of the original field that were not played, with the reason shown on the site (never a loss, no score). build.late_entry_summaries attaches them to the entrant; a pair listed here that was played, or an opponent outside the entrant's field, stops the build. Pairs with GPT-6 Luna and Mercury Decide are outside the requested scope (Ümit via Zeki #5220, 12 Nov 2026; common.OUT_OF_SCOPE_OPPONENTS): the site labels them so beside this reason, and they keep no entry Provisional.",
+ "_about": "Late-entry pairs of the original field that were not played, with the reason shown on the site (never a loss, no score). build.late_entry_summaries attaches them to the entrant; a pair listed here that was played, or an opponent outside the entrant's field, stops the build. Pairs with GPT-6 Luna and Mercury Decide are outside the requested scope (Ümit via Zeki #5220, 12 Nov 2026; common.OUT_OF_SCOPE_OPPONENTS): the site labels them so beside this reason, and they keep no entry Provisional. \"opponent_outage\": true marks a pair the opponent's side left unplayable (its paid API refusing for good, e.g. out of funds): shown with its reason, never a loss, and like an out-of-scope pair it keeps no entry Provisional.",
  "not_played": [
   {"entrant": "Drex Max 1.1", "opponent": "GPT-6 Luna", "reason": "opponent's API out of credit",
    "source": "mailbox/Late entries Drex - status 2026-11-06.md (match #829 blocked: OpenAI 429, no credit; deferred)"},
@@ -94,6 +94,12 @@
   {"entrant": "Liquid d1.2", "opponent": "GPT-6 Luna", "reason": "not attempted: outside the requested scope",
    "source": "mailbox/Late entry Liquid d1.2 - status.md (9 opponents, GPT-6 Luna and Mercury Decide not required; Ümit via Zeki #10928/#10931)"},
   {"entrant": "Liquid d1.2", "opponent": "Mercury Decide", "reason": "not attempted: outside the requested scope",
-   "source": "mailbox/Late entry Liquid d1.2 - status.md (9 opponents, GPT-6 Luna and Mercury Decide not required; Ümit via Zeki #10928/#10931)"}
+   "source": "mailbox/Late entry Liquid d1.2 - status.md (9 opponents, GPT-6 Luna and Mercury Decide not required; Ümit via Zeki #10928/#10931)"},
+  {"entrant": "SubQ Savant 1.4", "opponent": "GPT-6 Luna", "reason": "not attempted: outside the requested scope",
+   "source": "mailbox/Late entry SubQ Savant 1.4 - status.md (9 opponents, GPT-6 Luna and Mercury Decide not required; Can #11963)"},
+  {"entrant": "SubQ Savant 1.4", "opponent": "Mercury Decide", "reason": "not attempted: outside the requested scope",
+   "source": "mailbox/Late entry SubQ Savant 1.4 - status.md (9 opponents, GPT-6 Luna and Mercury Decide not required; Can #11963)"},
+  {"entrant": "SubQ Savant 1.4", "opponent": "Fastino GLiDE", "reason": "opponent's API out of funds (402)", "opponent_outage": true,
+   "source": "mailbox/Late entry SubQ Savant 1.4 - status.md (Fastino's hosted API answers 402 since 18 Nov ~08:00 UTC, no funds can be added, Can #12559; match #1565 aborted, no moves; pair left unplayed)"}
  ]
 }

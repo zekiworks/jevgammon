@@ -582,7 +582,12 @@ def _versions(po: dict) -> str:
   changed. 16 Nov 2026: Liquid d1.2-ultra and Liquid d1.2, two late entries to the original League 1 table on
   <a href="../leagues/#late-entries">Leagues</a> (Late entries), played through Liquid AI's decisions API on 16 Nov
   (their pairs with GPT-6 Luna (Decisions API) and Mercury Decide not played, outside the requested scope), each with
-  a page of its own; their cost is Liquid's list price times our recorded tokens. No score changed.</p>""")
+  a page of its own; their cost is Liquid's list price times our recorded tokens. No score changed. 19 Nov 2026: SubQ
+  Savant 1.4, a late entry to the original League 1 table on <a href="../leagues/#late-entries">Leagues</a> (Late
+  entries), played through SubQ's Chat Completions API on 18–19 Nov (choice only: SubQ refuses logprobs; its pairs with
+  GPT-6 Luna (Decisions API) and Mercury Decide not played, outside the requested scope, and its pair with Fastino
+  GLiDE not played, Fastino's API out of funds; such an opponent-side outage, disclosed, no longer keeps a late entry
+  Provisional), with a page of its own; its cost is SubQ's list price times our recorded tokens. No score changed.</p>""")
 
 
 def _confidence(t: dict, extra: dict) -> str:

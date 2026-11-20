@@ -1,0 +1,23 @@
+{
+  "name": "Raon-1 nano (on)",
+  "spec": "openai-compatible/raon-1-nano",
+  "provider": "local-vllm",
+  "quantization": "bf16",
+  "base_url": "http://127.0.0.1:18647/v1",
+  "reasoning": "template default",
+  "request": {
+    "chat_template_kwargs": {
+      "enable_thinking": true,
+      "truncate_history_thinking": false
+    },
+    "reasoning_effort": null
+  },
+  "max_tokens": 32768,
+  "top_logprobs": 20,
+  "letter_readout": "prefill",
+  "reasoning_field": "reasoning",
+  "note": "KRAFTON/Raon-1-nano @ fcf2d1d55e84e2f9fbe7b5d724dcfc4d861cfcee, BF16, on our GPU through KRAFTON's vLLM fork krafton-ai/vllm@13a5dd878253 (branch raon-1-nano, precompiled, venv ~/envs/raon-vllm; no vLLM release serves Raon1NanoForCausalLM), a process, not a container: logic's server small_models.py key raon-1-nano (served name raon-1-nano, port 18647, --trust-remote-code, reasoning parser raon_1, --max-model-len 69,632, 16 sequences, --generation-config auto). thinking on (enable_thinking true and truncate_history_thinking false, as logic's Logic & Math rows and the card), no effort sent (reasoning_effort removed: template default); the letter is read after the reasoning from a prefilled Answer:, the read-out's assistant message carrying the reasoning in its reasoning field (reasoning_field 'reasoning', as Qwen3.5 (on)): the pinned chat_template.jinja (lines 96-103 and 20-24) splits an assistant content at </think> and re-renders it as '<think>\\n' + trimmed reasoning + '\\n</think>\\n\\n' + content, so the default '<think>R</think>Answer:' is not in the rendered prompt (continue_final_message refuses it), while the fork's chat_utils hands 'reasoning' to the template as reasoning_content (rendered offline with the venv's transformers 5.23.0, string and openai content formats: the generation prompt + R + '\\n</think>\\n\\nAnswer:' exactly). Needs a runner that reads reasoning_field (late-smallchat-on a083fb4; improve pin c32fedb). Sampling: League 1's local chat rule, per request: temperature 1.0 from the chat client, everything else the server's default (generation_config.json sets no sampling: vLLM neutral), no seed; it differs from logic's Logic & Math rows: the card's 'General' temperature 0.1, presence_penalty 1.5, seed 0. Output cap 32,768 tokens (the chat client default). Registered in v3.db as a player row only on 2026-11-20 (Ümit #13295/#13301: the settings of its 'Did they improve?' row); its backgammon first stage is paused (paid opponents): no league, no match yet.",
+  "device": "RTX PRO 6000 (bariton), one GPU",
+  "parallel": 16,
+  "max_matches": 16
+}

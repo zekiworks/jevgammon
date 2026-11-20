@@ -1,0 +1,17 @@
+{
+  "name": "SmolLM2-360M-Instruct",
+  "spec": "openai-compatible/smollm2-360m",
+  "provider": "local-vllm",
+  "quantization": "bf16",
+  "base_url": "http://127.0.0.1:18707/v1",
+  "request": {
+    "temperature": 0
+  },
+  "max_tokens": 1024,
+  "top_logprobs": 20,
+  "letter_readout": "prefill",
+  "note": "HuggingFaceTB/SmolLM2-360M-Instruct @ a10cc1512eabd3dde888204e902eca88bddb4951, BF16, on our GPU through vLLM v0.30.0 (vllm/vllm-openai@sha256:8a69ffad015f138d7170c4ddc429e230a3bc1c1719f67e14324749df200a4b90) in BF16, --max-model-len 8,192 (config max_position_embeddings), 32 sequences, --generation-config auto: logic's server small_models.py key smollm2-360m (served name smollm2-360m, port 18707). No thinking mode (instruct model); the letter is read from a prefilled Answer: (its ChatML template renders it verbatim: checked offline with transformers 5.23.0). Sampling: temperature 0 (request field, replacing the chat client's 1.0: greedy, as logic's Logic & Math rows and LFM3-1.7B's comparison rows, Ümit #13248), everything else vLLM neutral (generation_config.json sets no sampling), no seed. Output cap max_tokens 1,024: the context is 8,192 tokens, so the chat client's default 32,768 would be refused; the read-out asks for 1 token (unchanged), and 1,024 is the 'Did they improve?' lesson calls' cap (LearnSmallPrep, 20 Nov: the longest stored play prompt is 4,883 tokens; 741 of 744 real lesson prompts fit 8,192 with 1,024 more). Registered in v3.db as a player row only on 2026-11-20 (Ümit #13295/#13301: the settings of its 'Did they improve?' row); its backgammon first stage is paused (paid opponents): no league, no match yet.",
+  "device": "RTX PRO 6000 (bariton), one GPU",
+  "parallel": 16,
+  "max_matches": 16
+}

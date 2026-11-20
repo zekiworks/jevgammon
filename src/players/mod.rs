@@ -980,6 +980,8 @@ mod tests {
             top_logprobs: None,
             readout: Default::default(),
             answer_prefix: None,
+            reasoning_prefill: None,
+            reasoning_field: None,
             prompt_note: None,
             prompt_note_file: None,
             pacer: None,

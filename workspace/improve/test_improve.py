@@ -55,22 +55,54 @@ class Isolated(unittest.TestCase):
 
 
 class SmallModels(unittest.TestCase):
-    """The amendment (Ümit native 1570509348072063026 via Zeki #5674/#5689): the 9 Tiny and Small chat models of
-    Logic & Math, local rows under the same plan, each with its served name."""
+    """The amendments (Ümit native 1570509348072063026 via Zeki #5674/#5689; Ümit #13295): the Tiny and Small chat
+    models of Logic & Math and the models of 2B or less, local rows under the same plan, each with its served name."""
 
     SMALL = {"gemma-4-e4b-on": "gemma-4-e4b-it", "minicpm5-2b-on": "minicpm5-2b", "lfm2.5-2.6b-on": "lfm2.5-2.6b",
              "lfm2.5-8b-a1b-on": "lfm2.5-8b-a1b", "lfm3-1.7b-on": "lfm3-1.7b", "gemma-4-e2b-on": "gemma-4-e2b-it",
-             "gemma-4-12b-on": "gemma-4-12b-it", "erk-14b-on": "erk-14b", "qwen3-14b-on": "qwen3-14b"}
+             "gemma-4-12b-on": "gemma-4-12b-it", "erk-14b-on": "erk-14b", "qwen3-14b-on": "qwen3-14b",
+             "lfm3-1.7b-off": "lfm3-1.7b", "qwen3.5-2b-on": "qwen3.5-2b", "raon-1-nano-on": "raon-1-nano",
+             "smollm2-1.7b": "smollm2-1.7b", "smollm2-360m": "smollm2-360m"}
+    GATED = {"lfm3-1.7b-on", "lfm3-1.7b-off", "minicpm5-2b-on", "qwen3.5-2b-on", "gemma-4-e2b-on", "raon-1-nano-on",
+             "smollm2-1.7b", "smollm2-360m"}
 
     def test_every_small_chat_row_is_local_unbilled_with_its_served_name_and_in_the_amendment(self):
         for key, served in self.SMALL.items():
             m = I.MODELS[key]
             self.assertEqual((m["lane"], m["expect"]), ("local", dict(models=[served])), key)
-            self.assertTrue(m["setup"].endswith(" (on)") and not m.get("billed"), key)
+            self.assertFalse(m.get("billed"), key)
+            mode = key.rsplit("-", 1)[1]
+            if mode in ("on", "off"):
+                self.assertTrue(m["setup"].endswith(f" ({mode})"), key)
         self.assertEqual(I.MODELS["gemma-4-e4b-on"]["setup"], "Gemma 4 E4B (on)")
-        (a,) = I.AMENDMENTS
-        self.assertEqual(sorted(a["added"]), sorted(self.SMALL))
+        self.assertEqual((I.MODELS["smollm2-1.7b"]["setup"], I.MODELS["smollm2-360m"]["setup"]),
+                         ("SmolLM2-1.7B-Instruct", "SmolLM2-360M-Instruct"))
+        a, b = I.AMENDMENTS
+        self.assertEqual(sorted(a["added"] + b["added"]), sorted(self.SMALL))
         self.assertIn("1570509348072063026", a["source"])
+        self.assertIn("#13295", b["source"])
+        self.assertEqual(I.VALIDITY_GATED, self.GATED)
+
+    def test_logic_routes_match_small_models_ports_and_served_names(self):
+        import importlib.util
+        import re
+        path = Path("/home/cbasaran/code/benchmark/logic/work/small_models.py")
+        if not path.exists():
+            self.skipTest(f"no {path}")
+        spec = importlib.util.spec_from_file_location("small_models", path)
+        sm = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(sm)
+        script = (Path(__file__).resolve().parent / "run_local.sh").read_text()
+        routes = re.findall(r'^\s*([\w.|-]+)\) echo "logic:(\S+) (\S+) (\d+) -"', script, re.M)
+        self.assertEqual({k for keys, *_ in routes for k in keys.split("|")},
+                         set(self.SMALL) - {"erk-14b-on", "qwen3-14b-on"})
+        for keys, logic, name, port in routes:
+            s = sm.SETUPS[logic]
+            self.assertEqual(int(port), s["port"], logic)
+            process = "venv" in s or s["server"] == "llama.cpp"
+            self.assertEqual(name, "-" if process else f"logic-small-{logic}", logic)
+            for key in keys.split("|"):
+                self.assertEqual(I.MODELS[key]["expect"]["models"], [sm.model_name(logic)], key)
 
     def test_a_row_without_settings_exports_but_cannot_run(self):
         saved = I.has_setup
@@ -178,7 +210,7 @@ class Schedule(Isolated):
             rows = {k: I.progress(k, *I.model_state(k)) for k in I.MODELS}
         finally:
             I.run_active = saved_active
-        self.assertEqual(len(rows), 24)
+        self.assertEqual(len(rows), 29)
         self.assertEqual((rows[KEY]["status"], rows[KEY]["reason"], rows[KEY]["series_done"]), ("running", None, 1))
         self.assertEqual((rows["glm-5.3-on"]["status"], rows["glm-5.3-on"]["reason"]), ("paused", "shared-balance priority"))
         self.assertEqual(rows["claude-opus-5.5-on"]["reason"], "waiting for its turn")
@@ -613,6 +645,59 @@ class FitCheck(Isolated):
         self.assertEqual(rec["sequences"], 4.0)
         with self.assertRaises(SystemExit):
             I.fit_check("qwen3.8-27b-on", server(16383))
+
+
+class ValidityGate(Isolated):
+    """Ümit #13295: a gated model's E1 is the validity check (more than 10% invalid: no series); a setup that sets a
+    key the pinned runner drops is refused before any file is written."""
+
+    def test_boundary_is_more_than_twenty_of_two_hundred(self):
+        self.assertIsNone(I.validity(dict(invalid=20)))
+        why = I.validity(dict(invalid=21))
+        self.assertTrue(why.startswith("E1: validity check: 21 of 200 answers invalid (10.5%)"), why)
+        self.assertRegex(I.public_reason(why), r"^[^<>&\x00-\x1f]{1,200}$")
+
+    def test_run_stops_a_gated_model_after_e1_and_leaves_others_alone(self):
+        names = ("check_inputs", "settings_check", "ensure_runner_db", "bind_plan", "fit_check", "run_empty",
+                 "run_series", "summary", "response_ids")
+        saved = {n: getattr(I, n) for n in names}
+        calls = []
+
+        def step(invalid):
+            def run_step(key, s, gate):
+                calls.append((key, s))
+                I.write_atomic(I.step_dir(key, s) / "aggregate.json", json.dumps(dict(test=dict(invalid=invalid))))
+            return run_step
+        try:
+            I.check_inputs = I.settings_check = I.ensure_runner_db = I.bind_plan = I.fit_check = lambda *a: None
+            I.summary = lambda *a, **k: None
+            I.response_ids = lambda key, s: [(I.MODELS[key]["expect"]["models"][0], None)]
+            I.run_empty = I.run_series = step(21)
+            self.assertEqual(I.run("smollm2-360m"), I.STOP)
+            self.assertEqual(calls, [("smollm2-360m", "E1")])
+            self.assertIn("validity check", json.loads((I.mdir("smollm2-360m") / "stopped.json").read_text())["reason"])
+            self.assertEqual(I.run("smollm2-360m"), I.STOP)  # stays stopped
+            self.assertEqual(I.run("gemma-4-e4b-on", until="S1"), 0)  # not gated
+            self.assertFalse((I.mdir("gemma-4-e4b-on") / "validity.json").exists())
+            I.run_empty = I.run_series = step(20)
+            self.assertEqual(I.run("lfm3-1.7b-off", until="S1"), 0)
+            self.assertEqual(json.loads((I.mdir("lfm3-1.7b-off") / "validity.json").read_text())["fired"], None)
+            self.assertEqual(calls[-2:], [("lfm3-1.7b-off", "E1"), ("lfm3-1.7b-off", "S1")])
+        finally:
+            for n, f in saved.items():
+                setattr(I, n, f)
+
+    def test_settings_the_pinned_runner_drops_are_refused(self):
+        saved = I.league_settings
+        try:
+            I.league_settings = lambda setup: dict(name=setup, spec="openai-compatible/m", reasoning_field="reasoning")
+            with self.assertRaises(SystemExit) as e:
+                I.settings_check("qwen3.5-2b-on")
+            self.assertIn("reasoning_field", str(e.exception))
+            I.league_settings = lambda setup: dict(name=setup, spec="openai-compatible/m", letter_readout="prefill")
+            I.settings_check("lfm3-1.7b-off")
+        finally:
+            I.league_settings = saved
 
 
 if __name__ == "__main__":

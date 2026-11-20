@@ -3,10 +3,12 @@
 Per model, at its leaderboard setting: 5 series of 10 games against GNUbg weak with one lesson call after each game
 (the pilot's lesson prompt and cut rule), the 200-position test after game 10 of every series (T10) with that
 series' lessons, and 3 empty runs of the same test interleaved through the run. One model's steps run one at a
-time, in this order: E1, S1, (cost check), S2, E2, S3, S4, E3, S5.
+time, in this order: E1, S1, (cost check), S2, E2, S3, S4, E3, S5. A gated small model (VALIDITY_GATED) stops after
+E1 when more than 10% of its answers there are invalid.
 
     python3 workspace/improve/improve.py run --model qwen3.8-flash-off [--until S1] [--base-url URL]
     python3 workspace/improve/improve.py status [--model KEY]
+    python3 workspace/improve/improve.py check --model KEY   # its setup can run now (run_local.sh skips it if not)
     python3 workspace/improve/improve.py summary
     IMPROVE_DRY=1 python3 workspace/improve/improve.py run --model qwen3.8-flash-off --until S1   # no model call
 
@@ -139,6 +141,15 @@ MODELS = {
     "gemma-4-12b-on": dict(setup="Gemma 4 12B (on)", lane="local", expect=dict(models=["gemma-4-12b-it"])),
     "erk-14b-on": dict(setup="Erk-14B (on)", lane="local", expect=dict(models=["erk-14b"])),
     "qwen3-14b-on": dict(setup="Qwen3-14B (on)", lane="local", expect=dict(models=["qwen3-14b"])),
+    # Small models of 2B or less (Ümit #13295, AMENDMENTS 2026-11-20): each the setup of its backgammon late entry
+    # (late-smallchat player.json name; LFM3-1.7B also with thinking off), local only. Their E1, and LFM3-1.7B (on)'s,
+    # MiniCPM5-2B (on)'s and Gemma 4 E2B (on)'s, is a validity check (VALIDITY_GATED). SmolLM2 has no thinking mode;
+    # its setup name is logic's model name until its late entry names it.
+    "lfm3-1.7b-off": dict(setup="LFM3-1.7B (off)", lane="local", expect=dict(models=["lfm3-1.7b"])),
+    "qwen3.5-2b-on": dict(setup="Qwen3.5-2B (on)", lane="local", expect=dict(models=["qwen3.5-2b"])),
+    "raon-1-nano-on": dict(setup="Raon-1 nano (on)", lane="local", expect=dict(models=["raon-1-nano"])),
+    "smollm2-1.7b": dict(setup="SmolLM2-1.7B-Instruct", lane="local", expect=dict(models=["smollm2-1.7b"])),
+    "smollm2-360m": dict(setup="SmolLM2-360M-Instruct", lane="local", expect=dict(models=["smollm2-360m"])),
     # Codex: the stream's served model (response.completed -> response.model), checked against the requested id (a
     # dated snapshot of it allowed): the league stored the answer text only, so there is no league evidence.
     "gpt-6.1-sol-high": dict(setup="GPT-6.1 Sol (high)", lane="subscription",
@@ -158,7 +169,27 @@ AMENDMENTS = [
          note="Added after the plan was published: the 9 Tiny and Small chat models tested on Logic & Math, each at "
               "its highest reasoning setting, under the same rule, prompt, test and schedule. A model runs only once "
               "its setup's settings are in the league database."),
+    dict(at="2026-11-20", path="MODELS",
+         added=["lfm3-1.7b-off", "qwen3.5-2b-on", "raon-1-nano-on", "smollm2-1.7b", "smollm2-360m"],
+         gated=["lfm3-1.7b-on", "lfm3-1.7b-off", "minicpm5-2b-on", "qwen3.5-2b-on", "gemma-4-e2b-on", "raon-1-nano-on",
+                "smollm2-1.7b", "smollm2-360m"],
+         source="Ümit #13295",
+         note="Added: the small models of 2B or less on our own GPU (LFM3-1.7B also with thinking off, Qwen3.5-2B, "
+              "Raon-1 nano, SmolLM2-1.7B, SmolLM2-360M), under the same rule, prompt, test and schedule, each with "
+              "the settings of its league setup. For these and LFM3-1.7B, MiniCPM5-2B and Gemma 4 E2B, the first "
+              "empty test is a validity check: a model with more than 10% invalid answers there (more than 20 of "
+              "200) stops and plays no series."),
 ]
+
+# The 2026-11-20 amendment's validity check (Ümit #13295): a gated model whose E1 has more than this share of invalid
+# answers stops before S1. No earlier rule for the small entries (their invalid share is only reported); 10% as proposed.
+VALIDITY_GATED = {k for a in AMENDMENTS for k in a.get("gated", [])}
+VALIDITY_MAX_INVALID = 0.10
+
+# players.settings keys the pinned runners (jevgammon-e417a0c, -545e268) do not read; serde drops them silently, so a
+# setup that sets one would play with another read-out than its league rows (late-smallchat-on 7170908/c274d4a):
+# `run` refuses it until a runner that reads them is pinned.
+RUNNER_UNREAD = ("reasoning_prefill", "reasoning_field")
 
 
 class Stop(Exception):
@@ -844,6 +875,16 @@ def test_complete(m):
     return bool(m) and m["answered"] == POSITIONS and m["failed"] == 0
 
 
+def validity(test):
+    """None, or why a gated model's E1 fails the validity check: more than VALIDITY_MAX_INVALID of the 200 positions
+    answered invalidly (no option named: the leaderboard's rule)."""
+    share = test["invalid"] / POSITIONS
+    if round(share, 6) > VALIDITY_MAX_INVALID:
+        return (f"E1: validity check: {test['invalid']} of {POSITIONS} answers invalid ({100 * share:.1f}%), more "
+                f"than {100 * VALIDITY_MAX_INVALID:.0f}%: no series")
+    return None
+
+
 def match_of(key, name):
     if not db_path(key).exists():
         return None
@@ -1170,6 +1211,15 @@ def check_inputs():
         raise SystemExit(f"{BIN}: real runs use a pinned binary copy named by commit (IMPROVE_BIN=.../jevgammon-<commit>)")
 
 
+def settings_check(key):
+    """Before a real run's first file: the setup's settings are in v3.db (else SystemExit) and set nothing the pinned
+    runner would drop (RUNNER_UNREAD)."""
+    unread = sorted(set(league_settings(MODELS[key]["setup"])) & set(RUNNER_UNREAD))
+    if unread:
+        raise SystemExit(f"{key}: {MODELS[key]['setup']} sets {', '.join(unread)}, which the pinned runner {BIN.name} "
+                         f"does not read: refused")
+
+
 def run(key, until=None, balance_reader=openrouter_balance):
     """Runs the model's next steps in order; returns 0 (done or reached `until`), STOP or PAUSE."""
     m = MODELS[key]
@@ -1185,6 +1235,8 @@ def run(key, until=None, balance_reader=openrouter_balance):
         print(f"PAUSED {key}: {why}", file=sys.stderr)
         return PAUSE
     check_inputs()
+    if not DRY:
+        settings_check(key)
     mdir(key).mkdir(parents=True, exist_ok=True)
     lock = open(mdir(key) / "lock", "w")
     try:
@@ -1220,6 +1272,14 @@ def run(key, until=None, balance_reader=openrouter_balance):
                 if why:
                     raise Stop(f"{step}: {why}")
             log(key, "step_done", step=step, billed=billed(key, step))
+            if key in VALIDITY_GATED and step_done(key, "E1") and not (mdir(key) / "validity.json").exists():
+                test = json.loads((step_dir(key, "E1") / "aggregate.json").read_text())["test"]
+                why = validity(test)
+                write_atomic(mdir(key) / "validity.json", json.dumps(
+                    dict(at=now(), invalid=test["invalid"], positions=POSITIONS, limit=VALIDITY_MAX_INVALID,
+                         fired=why), indent=1))
+                if why:
+                    raise Stop(why)
             if billed_model and step_done(key, "E1") and step_done(key, "S1") and cost_check(key) is None:
                 s1, e1 = billed(key, "S1"), billed(key, "E1")
                 why = rule_a(key, s1, e1)
@@ -1541,6 +1601,8 @@ def main():
     sc.add_argument("--note", required=True)
     st = sub.add_parser("status")
     st.add_argument("--model")
+    ck = sub.add_parser("check", help="the setup can run now (settings in v3.db, none the pinned runner drops)")
+    ck.add_argument("--model", required=True, choices=sorted(MODELS))
     sub.add_parser("summary")
     sub.add_parser("receipts", help="first calls, cost checks, pauses and stops per model")
     sub.add_parser("export", help="write improve.json from the run directories (for a timer or path trigger)")
@@ -1549,6 +1611,9 @@ def main():
         after_game(a.model, a.series)
     elif a.cmd == "status":
         status(a.model)
+    elif a.cmd == "check":
+        settings_check(a.model)
+        print(f"{a.model}: {MODELS[a.model]['setup']} can run")
     elif a.cmd == "summary":
         summary()
     elif a.cmd == "receipts":

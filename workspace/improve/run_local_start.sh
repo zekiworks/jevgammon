@@ -13,15 +13,19 @@ UUID=${1:?GPU UUID}; LANE=${2:?lane unit}; WATCH=${3:?watcher unit}; shift 3
 BIN=$PWD/target/improve-bin/jevgammon-e417a0c  # a worktree: copy (or link) the pinned binary there first
 RUNS=/home/cbasaran/code/jevgammon/workspace/improve/runs
 [[ -x "$BIN" ]] || { echo "missing pinned binary $BIN" >&2; exit 1; }
+# The lane's server container per model (run_local.sh server()), for the watcher; a process server (Raon-1 nano) has
+# none: it runs in the lane unit's cgroup, so the watcher's stop of the lane stops it.
 container() { case $1 in gemma-4-31b-on) echo v3-gemma4-31b ;; qwen3.8-27b-on) echo v3-qwen38-27b ;; lfm2.5-24b-a2b-on) echo v3-lfm25-24b ;;
-  gemma-4-e4b-on|gemma-4-e2b-on|gemma-4-12b-on|minicpm5-2b-on|lfm2.5-2.6b-on|lfm2.5-8b-a1b-on)
+  gemma-4-e4b-on|gemma-4-e2b-on|gemma-4-12b-on|minicpm5-2b-on|lfm2.5-2.6b-on|lfm2.5-8b-a1b-on|qwen3.5-2b-on)
     k=${1%-on}; [[ $k == gemma-* ]] && k=$k-it; echo "logic-small-$k" ;;
+  lfm3-1.7b-on|lfm3-1.7b-off) echo logic-small-lfm3-1.7b-vllm-rerun ;;
+  smollm2-1.7b|smollm2-360m) echo "logic-small-$1" ;;
   esac; }
 containers=()
 for m in "$@"; do
   claim=$RUNS/$m/lane.json
   if [[ -f $claim ]] && ! grep -q "\"$LANE\"" "$claim"; then echo "$m is claimed by another lane: $(cat "$claim")" >&2; exit 1; fi
-  containers+=("$(container "$m")")
+  c=$(container "$m"); [[ -z $c ]] || containers+=("$c")
 done
 for u in "$LANE" "$WATCH"; do
   if systemctl --user is-active -q "$u"; then echo "$u is already running" >&2; exit 1; fi

@@ -12,7 +12,8 @@ UUID=$1; shift
 LANE=${IMPROVE_LANE:?IMPROVE_LANE: the lane unit name}
 PY=/home/cbasaran/.pyenv/versions/3.12.13/bin/python3
 SERVERS=/home/cbasaran/code/jevgammon/tools/v3/servers
-# Small chat models: the league's (on) route, logic's own serve command on our card (#5119); `logic:KEY` below.
+# Small chat models: the league's (on) route, logic's own serve command on our card (#5119); `logic:KEY` below, with
+# small_models.py's port for KEY (test_improve checks them against SETUPS).
 SMALL_MODELS=${IMPROVE_SMALL_MODELS:-/home/cbasaran/code/benchmark/logic/work/small_models.py}
 RUNS=/home/cbasaran/code/jevgammon/workspace/improve/runs
 server() {  # model key -> "script name port gpu-variable" (script logic:KEY: small_models.py KEY, by UUID)
@@ -26,7 +27,13 @@ server() {  # model key -> "script name port gpu-variable" (script logic:KEY: sm
     minicpm5-2b-on) echo "logic:minicpm5-2b logic-small-minicpm5-2b 18614 -" ;;
     lfm2.5-2.6b-on) echo "logic:lfm2.5-2.6b logic-small-lfm2.5-2.6b 18613 -" ;;
     lfm2.5-8b-a1b-on) echo "logic:lfm2.5-8b-a1b logic-small-lfm2.5-8b-a1b 18601 -" ;;
-    lfm3-1.7b-on) echo "logic:lfm3-1.7b - 18605 -" ;;  # llama.cpp: a process, no container
+    # LFM3-1.7B (on) and (off): the server of the published LFM3-1.7B (off) row (vLLM nightly; LFM3-1.7B (on)'s twin
+    # lfm3-1.7b-vllm has the same arguments); thinking is set per request by the setup.
+    lfm3-1.7b-on|lfm3-1.7b-off) echo "logic:lfm3-1.7b-vllm-rerun logic-small-lfm3-1.7b-vllm-rerun 18645 -" ;;
+    qwen3.5-2b-on) echo "logic:qwen3.5-2b logic-small-qwen3.5-2b 18646 -" ;;
+    raon-1-nano-on) echo "logic:raon-1-nano - 18647 -" ;;  # KRAFTON's vLLM fork (~/envs/raon-vllm): a process
+    smollm2-1.7b) echo "logic:smollm2-1.7b logic-small-smollm2-1.7b 18705 -" ;;
+    smollm2-360m) echo "logic:smollm2-360m logic-small-smollm2-360m 18707 -" ;;
     *) return 1 ;;
   esac
 }
@@ -42,15 +49,20 @@ for model in "$@"; do
   claim=$RUNS/$model/lane.json
   owner=$([[ -f $claim ]] && "$PY" -c "import json,sys; print(json.load(open(sys.argv[1]))['lane'])" "$claim" || echo "")
   if [[ -n "$owner" && "$owner" != "$LANE" ]]; then echo "== $model: owned by $owner, skipped"; continue; fi
+  # Its setup can run now (settings in v3.db, none the pinned runner drops), else no server is started for it.
+  "$PY" workspace/improve/improve.py check --model "$model" || { echo "== $model: cannot run now, skipped"; continue; }
   read -r script name port var < <(server "$model") || { echo "unknown local model $model"; exit 1; }
   index=$(nvidia-smi -i "$UUID" --query-gpu=index,uuid --format=csv,noheader) || { echo "no GPU $UUID"; exit 1; }
   echo "== $model: host GPU $index"
   # Docker's CDI names GPUs by index here, not by UUID: the index the host gives this UUID now, and the
   # container must then report this UUID (checked below).
   start_server "$script" "$var" "${index%%,*}" || { echo "$model: server did not start"; exit 1; }
-  if [[ $name == - ]]; then  # a process server: the PID listening on the port must hold this GPU
+  if [[ $name == - ]]; then  # a process server: a process of the port's listener's session must hold this GPU
     pid=$(ss -ltnpH "sport = :$port" | grep -o 'pid=[0-9]*' | head -1 | cut -d= -f2)
-    if [[ -n $pid ]] && nvidia-smi -i "$UUID" --query-compute-apps=pid --format=csv,noheader | grep -qx "$pid"; then
+    # vLLM's GPU process is its engine core, a child of the listener; llama.cpp's is the listener itself
+    sid=$([[ -n $pid ]] && ps -o sid= -p "$pid" | tr -d ' ')
+    if [[ -n $sid ]] && nvidia-smi -i "$UUID" --query-compute-apps=pid --format=csv,noheader |
+        grep -qxF -f <(ps -e -o pid=,sid= | awk -v s="$sid" '$2 == s {print $1}'); then
       seen=$UUID; else seen="pid ${pid:-none} on another GPU"; fi
   else
     seen=$(docker exec "$name" nvidia-smi --query-gpu=uuid --format=csv,noheader | tr -d ' ')

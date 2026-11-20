@@ -1,9 +1,9 @@
 {
   "name": "SmolLM3-3B (off)",
-  "spec": "openai-compatible/smollm3-3b-tools",
+  "spec": "openai-compatible/smollm3-3b",
   "provider": "local-vllm",
   "quantization": "bf16",
-  "base_url": "http://127.0.0.1:18711/v1",
+  "base_url": "http://127.0.0.1:18710/v1",
   "request": {
     "chat_template_kwargs": {
       "enable_thinking": false
@@ -13,7 +13,7 @@
   },
   "top_logprobs": 20,
   "letter_readout": "prefill",
-  "note": "HuggingFaceTB/SmolLM3-3B @ a07cc9a04f16550a088caea529712d1d335b0ac1, BF16, on our GPU through vLLM v0.30.0 (vllm/vllm-openai@sha256:8a69ffad015f138d7170c4ddc429e230a3bc1c1719f67e14324749df200a4b90) in BF16, --max-model-len 65,536 (config max_position_embeddings, no YaRN), 16 sequences, --generation-config auto, reasoning parser qwen3 (and hermes tool calling, unused here): logic's Toolbench server, small_models.py key smollm3-3b-tools (served name smollm3-3b-tools, port 18711, bariton GPU 2), loaded and stopped by logic and shared with Toolbench's requests: no second copy (Ümit #13462). Thinking off (enable_thinking false: the template puts an empty '<think>\\n\\n</think>\\n' before the reply). The letter is read from a prefilled Answer:, which the pinned chat_template.jinja renders after that empty block (rendered offline with the v0.30.0 image's transformers 5.17.0: generation prompt + 'Answer:' exactly, content format 'string'). Sampling: the card's recommendation per request, temperature 0.6 and top_p 0.95 (also its generation_config.json), everything else vLLM neutral, no seed; the read-out asks for 1 token. For the 'Did they improve?' format check only (Ümit #13462): its first empty test (E1), then it stops, with no series. Registered in v3.db as a player row only on 2026-11-20; no league, no match.",
+  "note": "HuggingFaceTB/SmolLM3-3B @ a07cc9a04f16550a088caea529712d1d335b0ac1, BF16, on our GPU through vLLM v0.30.0 (vllm/vllm-openai@sha256:8a69ffad015f138d7170c4ddc429e230a3bc1c1719f67e14324749df200a4b90) in BF16, --max-model-len 65,536 (config max_position_embeddings, no YaRN), 32 sequences, --generation-config auto, reasoning parser qwen3: logic's server small_models.py key smollm3-3b (served name smollm3-3b, port 18710), the same pin, image and arguments as logic's Logic & Math load, started on our card (Ümit #13462). Thinking off (enable_thinking false: the template puts an empty '<think>\\n\\n</think>\\n' before the reply). The letter is read from a prefilled Answer:, which the pinned chat_template.jinja renders after that empty block (rendered offline with the v0.30.0 image's transformers 5.17.0: generation prompt + 'Answer:' exactly, content format 'string'). Sampling: the card's recommendation per request, temperature 0.6 and top_p 0.95 (also its generation_config.json), everything else vLLM neutral, no seed; the read-out asks for 1 token. For the 'Did they improve?' format check only (Ümit #13462): its first empty test (E1), then it stops, with no series. Registered in v3.db as a player row only on 2026-11-20; no league, no match.",
   "device": "RTX PRO 6000 (bariton), one GPU",
   "parallel": 16,
   "max_matches": 16

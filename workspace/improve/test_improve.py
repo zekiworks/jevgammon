@@ -699,6 +699,43 @@ class ValidityGate(Isolated):
         finally:
             I.league_settings = saved
 
+    def test_a_pin_that_reads_them_runs_them_after_its_parity_pass(self):
+        """PIN_READS: jevgammon-c32fedb reads reasoning_prefill/reasoning_field, but only with a recorded parity PASS
+        for that very binary (Ümit #13349); jevgammon-e417a0c still refuses them."""
+        saved = I.league_settings, I.BIN
+        try:
+            I.league_settings = lambda setup: dict(name=setup, spec="openai-compatible/m", reasoning_field="reasoning",
+                                                   reasoning_prefill="<think>\n{reasoning}\n</think>\n\nAnswer:")
+            for commit in ("e417a0c", "c32fedb"):
+                (Path(self.tmp.name) / f"jevgammon-{commit}").write_bytes(commit.encode())
+            I.BIN = Path(self.tmp.name) / "jevgammon-e417a0c"
+            with self.assertRaises(SystemExit) as e:
+                I.settings_check("minicpm5-2b-on")
+            self.assertIn("reasoning_field, reasoning_prefill", str(e.exception))
+            I.BIN = Path(self.tmp.name) / "jevgammon-c32fedb"
+            with self.assertRaises(SystemExit) as e:
+                I.settings_check("minicpm5-2b-on")
+            self.assertIn("parity", str(e.exception))
+            record = dict(result="PASS", pin=dict(commit="c32fedb", sha256=I.sha256_file(I.BIN)))
+            I.write_atomic(I.parity_path("c32fedb"), json.dumps(dict(record, result="FAIL")))
+            with self.assertRaises(SystemExit):
+                I.settings_check("minicpm5-2b-on")
+            I.write_atomic(I.parity_path("c32fedb"), json.dumps(dict(record, pin=dict(sha256="0" * 64))))
+            with self.assertRaises(SystemExit):  # another binary under the same name
+                I.settings_check("minicpm5-2b-on")
+            I.write_atomic(I.parity_path("c32fedb"), json.dumps(record))
+            I.settings_check("minicpm5-2b-on")
+        finally:
+            I.league_settings, I.BIN = saved
+
+    def test_the_export_names_each_rows_runner_pins(self):
+        """Each exported row lists the pins its steps ran on (step_start's binary), once each, in order of first use."""
+        self.assertEqual(I.model_summary("lfm3-1.7b-off")["runner"], [])
+        old, new = dict(commit="e417a0c", sha256="a" * 64), dict(commit="c32fedb", sha256="b" * 64)
+        for step, b in (("E1", new), ("S1", new), ("S2", old)):
+            I.log("lfm3-1.7b-off", "step_start", step=step, gate=None, binary=dict(b, path="x", pinned=True))
+        self.assertEqual(I.model_summary("lfm3-1.7b-off")["runner"], [new, old])
+
 
 if __name__ == "__main__":
     unittest.main()

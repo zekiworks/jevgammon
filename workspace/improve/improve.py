@@ -188,8 +188,15 @@ VALIDITY_MAX_INVALID = 0.10
 
 # players.settings keys the pinned runners (jevgammon-e417a0c, -545e268) do not read; serde drops them silently, so a
 # setup that sets one would play with another read-out than its league rows (late-smallchat-on 7170908/c274d4a):
-# `run` refuses it until a runner that reads them is pinned.
+# `run` refuses it unless the lane's pin reads them (PIN_READS).
 RUNNER_UNREAD = ("reasoning_prefill", "reasoning_field")
+
+# Pins built after e417a0c and the RUNNER_UNREAD keys each reads. c32fedb = e417a0c + late-smallchat-on 7170908,
+# a083fb4, c274d4a (src only; branch improve-pin-reasoning; Ümit #13295/#13301). A pin listed here runs only after its
+# GPU-free parity replay passed (Ümit #13349): parity.py --record replays a finished step of a published lane through
+# the pin (every request byte-identical to the stored ones, answers and metrics equal) and records
+# runs/parity/<commit>.json (parity_check).
+PIN_READS = {"c32fedb": RUNNER_UNREAD}
 
 
 class Stop(Exception):
@@ -1189,11 +1196,14 @@ def bind_plan(key):
     return stored
 
 
+def bin_commit():
+    return BIN.name.split("-", 1)[1] if BIN.name.startswith("jevgammon-") else None
+
+
 def binary_identity():
     """The runner binary of this step: path, sha256, and the commit it was built from (a lane's pinned copy is named
     jevgammon-<commit>; anything else is recorded as unpinned)."""
-    name = BIN.name
-    commit = name.split("-", 1)[1] if name.startswith("jevgammon-") else None
+    commit = bin_commit()
     return dict(path=str(BIN), sha256=sha256_file(BIN), commit=commit, pinned=commit is not None,
                 mtime=datetime.fromtimestamp(BIN.stat().st_mtime, timezone.utc).isoformat(timespec="seconds"))
 
@@ -1211,10 +1221,26 @@ def check_inputs():
         raise SystemExit(f"{BIN}: real runs use a pinned binary copy named by commit (IMPROVE_BIN=.../jevgammon-<commit>)")
 
 
+def parity_path(commit):
+    return RUNS / "parity" / f"{commit}.json"
+
+
+def parity_check(commit):
+    """A pin listed in PIN_READS needs its recorded parity PASS for this very binary (sha256), else SystemExit."""
+    f = parity_path(commit)
+    p = json.loads(f.read_text()) if f.exists() else {}
+    if p.get("result") != "PASS" or p.get("pin", {}).get("sha256") != sha256_file(BIN):
+        raise SystemExit(f"{BIN.name}: no recorded parity PASS for this binary ({f}): run workspace/improve/parity.py "
+                         f"--record --bin {BIN} first: refused")
+
+
 def settings_check(key):
-    """Before a real run's first file: the setup's settings are in v3.db (else SystemExit) and set nothing the pinned
-    runner would drop (RUNNER_UNREAD)."""
-    unread = sorted(set(league_settings(MODELS[key]["setup"])) & set(RUNNER_UNREAD))
+    """Before a real run's first file: the setup's settings are in v3.db (else SystemExit), set nothing the pinned
+    runner would drop (RUNNER_UNREAD less the pin's PIN_READS), and a PIN_READS pin has passed its parity replay."""
+    commit = bin_commit()
+    if commit in PIN_READS:
+        parity_check(commit)
+    unread = sorted(set(league_settings(MODELS[key]["setup"])) & set(RUNNER_UNREAD) - set(PIN_READS.get(commit, ())))
     if unread:
         raise SystemExit(f"{key}: {MODELS[key]['setup']} sets {', '.join(unread)}, which the pinned runner {BIN.name} "
                          f"does not read: refused")
@@ -1462,10 +1488,16 @@ def model_summary(key):
                            t10={k: a["t10"][k] for k in TEST_KEYS}))
     settings = {} if DRY or not has_setup(m["setup"]) else league_settings(m["setup"])
     route = settings.get("provider") or m["lane"]
+    # The runner pins its steps ran on (step_start's binary), in order of first use: the page can show each row's pin.
+    runner = []
+    for e in events(key):
+        b = e.get("binary") if e["event"] == "step_start" else None
+        if b and (pin := dict(commit=b.get("commit"), sha256=b.get("sha256"))) not in runner:
+            runner.append(pin)
     return dict(key=key, setup=m["setup"], route=route, billed=bool(m.get("billed")), state=state,
                 reason=public_reason(reason),
                 progress=progress(key, state, reason),
-                steps_done=[s for s in STEPS if step_done(key, s)], empty=empty, series=series,
+                steps_done=[s for s in STEPS if step_done(key, s)], empty=empty, series=series, runner=runner,
                 cost=dict(billed_usd=round(billed(key), 4) if m.get("billed") else 0.0,
                           reported_usd=round(reported(key), 4) if m.get("billed") else None,
                           api_equivalent_usd=api_equivalent(key), estimate_usd=m.get("estimate")))

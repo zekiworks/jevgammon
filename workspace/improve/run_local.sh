@@ -5,11 +5,13 @@
 # skips a model claimed by another lane before touching any server. Before each start: the UUID's index on the host
 # and the GPU the container sees are checked; the container's model path and image are recorded. A stop (exit 2)
 # moves on to the next model; a pause (3) or an error stops the lane (the server is stopped).
-#   IMPROVE_LANE=improve-local3 workspace/improve/run_local.sh GPU-UUID qwen3.8-27b-on lfm2.5-24b-a2b-on
+#   IMPROVE_LANE=improve-local3 [IMPROVE_PIN=c32fedb] workspace/improve/run_local.sh GPU-UUID qwen3.8-27b-on lfm2.5-24b-a2b-on
+# The runner pin: IMPROVE_BIN (run_local_start.sh sets it), else target/improve-bin/jevgammon-${IMPROVE_PIN:-e417a0c}.
 set -uo pipefail
 cd "$(dirname "$0")/../.."
 UUID=$1; shift
 LANE=${IMPROVE_LANE:?IMPROVE_LANE: the lane unit name}
+export IMPROVE_BIN=${IMPROVE_BIN:-$PWD/target/improve-bin/jevgammon-${IMPROVE_PIN:-e417a0c}}
 PY=/home/cbasaran/.pyenv/versions/3.12.13/bin/python3
 SERVERS=/home/cbasaran/code/jevgammon/tools/v3/servers
 # Small chat models: the league's (on) route, logic's own serve command on our card (#5119); `logic:KEY` below, with

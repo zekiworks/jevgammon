@@ -150,6 +150,11 @@ MODELS = {
     "raon-1-nano-on": dict(setup="Raon-1 nano (on)", lane="local", expect=dict(models=["raon-1-nano"])),
     "smollm2-1.7b": dict(setup="SmolLM2-1.7B-Instruct", lane="local", expect=dict(models=["smollm2-1.7b"])),
     "smollm2-360m": dict(setup="SmolLM2-360M-Instruct", lane="local", expect=dict(models=["smollm2-360m"])),
+    # SmolLM3-3B (Ümit #13462; last in the small lane, #13489): logic's Logic & Math load (small_models.py smollm3-3b) on
+    # our card, as the others. (off) is the format check only (`check_only`): its E1, then it stops; its invalid share
+    # is reported beside (on)'s.
+    "smollm3-3b-off": dict(setup="SmolLM3-3B (off)", lane="local", check_only=True, expect=dict(models=["smollm3-3b"])),
+    "smollm3-3b-on": dict(setup="SmolLM3-3B (on)", lane="local", expect=dict(models=["smollm3-3b"])),
     # Codex: the stream's served model (response.completed -> response.model), checked against the requested id (a
     # dated snapshot of it allowed): the league stored the answer text only, so there is no league evidence.
     "gpt-6.1-sol-high": dict(setup="GPT-6.1 Sol (high)", lane="subscription",
@@ -179,6 +184,14 @@ AMENDMENTS = [
               "the settings of its league setup. For these and LFM3-1.7B, MiniCPM5-2B and Gemma 4 E2B, the first "
               "empty test is a validity check: a model with more than 10% invalid answers there (more than 20 of "
               "200) stops and plays no series."),
+    dict(at="2026-11-20", path="MODELS",
+         added=["smollm3-3b-off", "smollm3-3b-on"], gated=["smollm3-3b-on"], check_only=["smollm3-3b-off"],
+         source="Ümit #13462",
+         note="Added: SmolLM3-3B with thinking on, under the same rule, prompt, test and schedule, with the card's "
+              "sampling (temperature 0.6, top_p 0.95), its first empty test a validity check as above; with thinking "
+              "off it runs the first empty test only, as a format check, and plays no series. On our own GPU, a model "
+              "whose next lesson call or next game's lessons would not fit its context stops there with that reason; "
+              "lessons are never shortened to fit."),
 ]
 
 # The 2026-11-20 amendment's validity check (Ümit #13295): a gated model whose E1 has more than this share of invalid
@@ -496,6 +509,84 @@ def lessons_context(blocks):
     if not blocks:
         return ""
     return "\n".join([OPEN, LESSONS_INTRO, ""] + [f"After game {g}:\n{t}\n" for g, t in blocks] + [CLOSE])
+
+
+# --- Context fit (Ümit #13462 item 3) --------------------------------------------------------------------------
+# The runner appends the whole note to the play call's system prompt (llm.rs play_system: no cut, no length check) and
+# sends the lesson call as built; vLLM never truncates a prompt either: one longer than max-model-len minus the request's
+# max_tokens is refused (HTTP 400, which the runner does not retry). So lessons are never cut, but a short context would
+# fail requests (re-asked for hours, then the lane stops). Before each lesson call and each note (the next game's, T10's),
+# the request is measured on the model's own server (POST /tokenize: its tokenizer and chat template, no generation) and
+# the model stops with a recorded "lessons don't fit" reason. The play call is measured with the model's longest stored
+# position (E1 and its games so far) plus POSITION_MARGIN tokens: the longest stored game position of every lane (13,406
+# characters) is 227 characters longer than the longest test position (13,179), at most one token per character.
+POSITION_MARGIN = 256
+READOUT_MARGIN = 16  # reasoning on: the read-out's prefill around a full-length reasoning, and its answer token
+NO_FIT = "LESSONS DON'T FIT:"
+
+
+def tokenized(key, body, fetch=None):
+    """(prompt tokens, max_model_len) of a chat request on the model's own vLLM server (POST /tokenize)."""
+    url = (base_url_of(key) or league_settings(MODELS[key]["setup"])["base_url"]).rsplit("/v1", 1)[0] + "/tokenize"
+    fetch = fetch or (lambda u, b: urllib.request.urlopen(urllib.request.Request(
+        u, data=json.dumps(b).encode(), headers={"Content-Type": "application/json"}), timeout=60).read().decode())
+    r = json.loads(fetch(url, body))
+    return r["count"], r["max_model_len"]
+
+
+def position_messages(key):
+    """The system and user messages of the model's longest stored position prompt (tests and games, note removed), or
+    None before its first stored request."""
+    if not db_path(key).exists():
+        return None
+    db = sqlite3.connect(f"file:{db_path(key)}?mode=ro", uri=True, timeout=60)
+    best = None
+    try:
+        for table in ("answer_exchanges", "exchanges"):
+            for (r,) in db.execute(f"SELECT request FROM {table} WHERE json_valid(request) ORDER BY "
+                                   "length(json_extract(request, '$.messages[1].content')) DESC LIMIT 1"):
+                msgs = json.loads(r).get("messages") or []
+                if len(msgs) < 2 or [m.get("role") for m in msgs[:2]] != ["system", "user"]:
+                    continue
+                msgs = [dict(role="system", content=msgs[0]["content"].split("\n\n" + OPEN)[0]),
+                        dict(role="user", content=msgs[1]["content"])]
+                if best is None or len(msgs[1]["content"]) > len(best[1]["content"]):
+                    best = msgs
+    finally:
+        db.close()
+    return best
+
+
+def context_fit(key, what, messages, play, fetch=None):
+    """None, or why `messages` do not fit the model's context with the reply its settings ask for (`play`: the play
+    call, else the lesson call). Local models only; a server that cannot measure is logged and the request goes ahead
+    (vLLM refuses, never cuts, a prompt that does not fit)."""
+    if DRY or MODELS[key]["lane"] != "local":
+        return None
+    settings = league_settings(MODELS[key]["setup"])
+    request = settings.get("request") or {}
+    body = dict(model=settings["spec"].split("/", 1)[1], messages=messages,
+                chat_template_kwargs=request.get("chat_template_kwargs"), add_generation_prompt=True)
+    if play and "reasoning" not in settings:  # the read-out alone: 1 token after the prefilled answer
+        body.update(messages=messages + [dict(role="assistant", content=settings.get("answer_prefix", "Answer:"))],
+                    add_generation_prompt=False, continue_final_message=True)
+        reply = 1
+    else:
+        reply = request.get("max_tokens") or settings.get("max_tokens") or 32768
+        reply += READOUT_MARGIN if play else 0
+    margin = POSITION_MARGIN if play else 0
+    try:
+        count, ctx = tokenized(key, body, fetch)
+    except Exception as e:  # noqa: BLE001
+        log(key, "context_fit_unmeasured", what=what, error=str(e)[:300])
+        return None
+    fits = count + margin + reply <= ctx
+    log(key, "context_fit", what=what, prompt_tokens=count, position_margin=margin, reply_tokens=reply,
+        max_model_len=ctx, fits=fits)
+    if fits:
+        return None
+    return (f"lessons don't fit: {what}: {count} prompt tokens{f' + {margin} position margin' if margin else ''} + "
+            f"{reply} for the reply > max-model-len {ctx}")
 
 
 # --- Game records (the pilot's) ----------------------------------------------------------------------------------
@@ -971,6 +1062,8 @@ def run_series(key, step, gate):
         if r.returncode != 0:
             (d / "failed").write_text(r.stderr[-2000:])
             log(key, "series_failed", step=step, attempt=attempt, stderr=r.stderr[-1000:])
+            if NO_FIT in r.stderr:  # the hook's context check (context_fit): the model stops before the request
+                raise Stop(f"{step}: " + next(x for x in r.stderr.splitlines() if NO_FIT in x).split(NO_FIT, 1)[1].strip())
             if "ROUTE CHECK" in r.stderr:
                 raise Stop(f"{step}: {r.stderr[-600:]}")
             if (text := key_limit_text(r.stderr)) or "KEY LIMIT:" in r.stderr:
@@ -1014,6 +1107,12 @@ def after_game(key, s):
     text, info = write_lessons(key, step, g, record)
     blocks = [(k, (d / f"lessons-g{k:02d}.txt").read_text().strip()) for k in range(1, g + 1)]
     note = lessons_context(blocks)
+    position = position_messages(key) if note else None
+    if position:  # the next game's (or T10's) play call with this note, before the runner reads it
+        why = context_fit(key, f"the note after game {g} ({'T10' if g == GAMES else f'game {g + 1}'})",
+                          [dict(position[0], content=f"{position[0]['content']}\n\n{note.rstrip()}"), position[1]], True)
+        if why:
+            raise SystemExit(f"{NO_FIT} {why}")
     write_atomic(d / "note.txt", note)
     (d / "contexts").mkdir(exist_ok=True)
     (d / "contexts" / f"after-g{g:02d}.txt").write_text(note)
@@ -1049,6 +1148,10 @@ def write_lessons(key, step, g, record):
         cfg = player_config(key, game_name(key, series_of(step), attempt_of(key, step)), 1, ledger=ledger,
                             base_url=base_url_of(key))
         (d / "lesson-player.json").write_text(json.dumps(cfg, indent=1))
+        why = context_fit(key, f"the lesson call after game {g}",
+                          [dict(role="system", content=system), dict(role="user", content=user)], False)
+        if why:
+            raise SystemExit(f"{NO_FIT} {why}")
         for k in range(20):
             r = subprocess.run([str(BIN), "lesson", "--player", str(d / "lesson-player.json"), "--system",
                                 str(d / "lesson-system.txt"), "--user", str(d / f"lessons-g{g:02d}.user.txt"),
@@ -1281,6 +1384,10 @@ def run(key, until=None, balance_reader=openrouter_balance):
     billed_model = m.get("billed") and not DRY
     try:
         while (step := next_step(key)) is not None:
+            if m.get("check_only") and step_done(key, "E1"):  # the format check (Ümit #13462): E1 only
+                invalid = json.loads((step_dir(key, "E1") / "aggregate.json").read_text())["test"]["invalid"]
+                raise Stop(f"E1: format check only: {invalid} of {POSITIONS} answers invalid "
+                           f"({100 * invalid / POSITIONS:.1f}%); no series")
             rejected = mdir(key) / "route-rejections.jsonl"
             if rejected.exists() and rejected.stat().st_size:
                 raise Stop(f"route check: {rejected.read_text().splitlines()[0][:600]}")
@@ -1298,12 +1405,13 @@ def run(key, until=None, balance_reader=openrouter_balance):
                 if why:
                     raise Stop(f"{step}: {why}")
             log(key, "step_done", step=step, billed=billed(key, step))
-            if key in VALIDITY_GATED and step_done(key, "E1") and not (mdir(key) / "validity.json").exists():
+            if (key in VALIDITY_GATED or m.get("check_only")) and step_done(key, "E1") and \
+                    not (mdir(key) / "validity.json").exists():
                 test = json.loads((step_dir(key, "E1") / "aggregate.json").read_text())["test"]
-                why = validity(test)
+                why = validity(test) if key in VALIDITY_GATED else None
                 write_atomic(mdir(key) / "validity.json", json.dumps(
                     dict(at=now(), invalid=test["invalid"], positions=POSITIONS, limit=VALIDITY_MAX_INVALID,
-                         fired=why), indent=1))
+                         fired=why, check_only=bool(m.get("check_only"))), indent=1))
                 if why:
                     raise Stop(why)
             if billed_model and step_done(key, "E1") and step_done(key, "S1") and cost_check(key) is None:
@@ -1453,7 +1561,9 @@ def public_reason(reason):
         return None
     m = re.match(r"\s*([ES][1-5]):", reason)
     step = f"{m.group(1)}: " if m else ""
-    known = [("QUOTA: 429", "usage limit (429 rate_limit_error)"), ("usage limit (429)", "usage limit (429 rate_limit_error)"),
+    # First: its token counts can contain "529".
+    known = [("lessons don't fit", "lessons don't fit the model's context"),
+             ("QUOTA: 429", "usage limit (429 rate_limit_error)"), ("usage limit (429)", "usage limit (429 rate_limit_error)"),
              ("529", "provider overloaded (529)"), ("overloaded_error", "provider overloaded (529)"),
              ("provider account limit", "provider account limit (shared-balance priority)"),
              ("Key limit exceeded", "provider account limit (shared-balance priority)"),

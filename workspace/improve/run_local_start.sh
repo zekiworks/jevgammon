@@ -22,6 +22,7 @@ container() { case $1 in gemma-4-31b-on) echo v3-gemma4-31b ;; qwen3.8-27b-on) e
     k=${1%-on}; [[ $k == gemma-* ]] && k=$k-it; echo "logic-small-$k" ;;
   lfm3-1.7b-on|lfm3-1.7b-off) echo logic-small-lfm3-1.7b-vllm-rerun ;;
   smollm2-1.7b|smollm2-360m) echo "logic-small-$1" ;;
+  smollm3-3b-off|smollm3-3b-on) echo logic-small-smollm3-3b ;;
   esac; }
 containers=()
 for m in "$@"; do

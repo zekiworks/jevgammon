@@ -62,9 +62,10 @@ class SmallModels(unittest.TestCase):
              "lfm2.5-8b-a1b-on": "lfm2.5-8b-a1b", "lfm3-1.7b-on": "lfm3-1.7b", "gemma-4-e2b-on": "gemma-4-e2b-it",
              "gemma-4-12b-on": "gemma-4-12b-it", "erk-14b-on": "erk-14b", "qwen3-14b-on": "qwen3-14b",
              "lfm3-1.7b-off": "lfm3-1.7b", "qwen3.5-2b-on": "qwen3.5-2b", "raon-1-nano-on": "raon-1-nano",
-             "smollm2-1.7b": "smollm2-1.7b", "smollm2-360m": "smollm2-360m"}
+             "smollm2-1.7b": "smollm2-1.7b", "smollm2-360m": "smollm2-360m",
+             "smollm3-3b-off": "smollm3-3b", "smollm3-3b-on": "smollm3-3b"}
     GATED = {"lfm3-1.7b-on", "lfm3-1.7b-off", "minicpm5-2b-on", "qwen3.5-2b-on", "gemma-4-e2b-on", "raon-1-nano-on",
-             "smollm2-1.7b", "smollm2-360m"}
+             "smollm2-1.7b", "smollm2-360m", "smollm3-3b-on"}
 
     def test_every_small_chat_row_is_local_unbilled_with_its_served_name_and_in_the_amendment(self):
         for key, served in self.SMALL.items():
@@ -77,15 +78,21 @@ class SmallModels(unittest.TestCase):
         self.assertEqual(I.MODELS["gemma-4-e4b-on"]["setup"], "Gemma 4 E4B (on)")
         self.assertEqual((I.MODELS["smollm2-1.7b"]["setup"], I.MODELS["smollm2-360m"]["setup"]),
                          ("SmolLM2-1.7B-Instruct", "SmolLM2-360M-Instruct"))
-        a, b = I.AMENDMENTS
-        self.assertEqual(sorted(a["added"] + b["added"]), sorted(self.SMALL))
+        a, b, c = I.AMENDMENTS
+        self.assertEqual(sorted(a["added"] + b["added"] + c["added"]), sorted(self.SMALL))
         self.assertIn("1570509348072063026", a["source"])
         self.assertIn("#13295", b["source"])
+        self.assertIn("#13462", c["source"])
         self.assertEqual(I.VALIDITY_GATED, self.GATED)
+        self.assertEqual(c["check_only"], [k for k, m in I.MODELS.items() if m.get("check_only")])
+        keys = list(I.MODELS)  # Ümit #13489: SmolLM3-3B last in the small lane, (off) before (on)
+        self.assertEqual(keys[keys.index("smollm2-360m") + 1:keys.index("smollm2-360m") + 3],
+                         ["smollm3-3b-off", "smollm3-3b-on"])
 
-    def test_logic_routes_match_small_models_ports_and_served_names(self):
+    def test_logic_routes_match_small_models_names_and_take_its_ports(self):
         import importlib.util
         import re
+        import subprocess
         path = Path("/home/cbasaran/code/benchmark/logic/work/small_models.py")
         if not path.exists():
             self.skipTest(f"no {path}")
@@ -93,16 +100,25 @@ class SmallModels(unittest.TestCase):
         sm = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(sm)
         script = (Path(__file__).resolve().parent / "run_local.sh").read_text()
-        routes = re.findall(r'^\s*([\w.|-]+)\) echo "logic:(\S+) (\S+) (\d+) -"', script, re.M)
+        routes = re.findall(r'^\s*([\w.|-]+)\) echo "logic:(\S+) (\S+) - -"', script, re.M)
         self.assertEqual({k for keys, *_ in routes for k in keys.split("|")},
                          set(self.SMALL) - {"erk-14b-on", "qwen3-14b-on"})
-        for keys, logic, name, port in routes:
+        # The port: small_models.py's own, read when the model starts (its ports move with its SETUPS order).
+        port = script[script.index("logic_port() {"):].split("\n}\n", 1)[0] + "\n}"
+        for keys, logic, name in routes:
             s = sm.SETUPS[logic]
-            self.assertEqual(int(port), s["port"], logic)
+            got = subprocess.run(["bash", "-c", f'PY={sys.executable}; SMALL_MODELS={path}\n{port}\nlogic_port {logic}'],
+                                 capture_output=True, text=True, check=True).stdout
+            self.assertEqual(got, f"{s['port']}\n", logic)
             process = "venv" in s or s["server"] == "llama.cpp"
             self.assertEqual(name, "-" if process else f"logic-small-{logic}", logic)
             for key in keys.split("|"):
                 self.assertEqual(I.MODELS[key]["expect"]["models"], [sm.model_name(logic)], key)
+        # SmolLM3-3B: logic's Logic & Math load (its :18710 server), pinned, vLLM v0.30.0, qwen3 reasoning parser.
+        s = sm.SETUPS["smollm3-3b"]
+        self.assertEqual((s["port"], s["repo"], s["rev"], s["image"], s["max_model_len"], s["vllm_args"]),
+                         (18710, "HuggingFaceTB/SmolLM3-3B", "a07cc9a04f16550a088caea529712d1d335b0ac1", sm.VLLM_DIGEST,
+                          65536, ["--reasoning-parser", "qwen3"]))
 
     def test_a_row_without_settings_exports_but_cannot_run(self):
         saved = I.has_setup
@@ -145,7 +161,7 @@ class SmallModels(unittest.TestCase):
                 'start_server "$script" "$var" 3; stop_server "$script"\n'
                 'read -r script name port var < <(server qwen3.8-27b-on); start_server "$script" "$var" 3\n')
         out = subprocess.run(["bash", "-c", stub], capture_output=True, text=True, check=True).stdout.splitlines()
-        self.assertEqual(out, ["logic-small-gemma-4-e4b-it 18602",
+        self.assertEqual(out, ["logic-small-gemma-4-e4b-it -",
                                "python3 /logic/small_models.py serve gemma-4-e4b-it GPU-x",
                                "python3 /logic/small_models.py stop gemma-4-e4b-it",
                                "env QWEN27_GPU=3 /srv/qwen38-27b.sh start"])
@@ -210,7 +226,7 @@ class Schedule(Isolated):
             rows = {k: I.progress(k, *I.model_state(k)) for k in I.MODELS}
         finally:
             I.run_active = saved_active
-        self.assertEqual(len(rows), 29)
+        self.assertEqual(len(rows), 31)
         self.assertEqual((rows[KEY]["status"], rows[KEY]["reason"], rows[KEY]["series_done"]), ("running", None, 1))
         self.assertEqual((rows["glm-5.3-on"]["status"], rows["glm-5.3-on"]["reason"]), ("paused", "shared-balance priority"))
         self.assertEqual(rows["claude-opus-5.5-on"]["reason"], "waiting for its turn")
@@ -735,6 +751,110 @@ class ValidityGate(Isolated):
         for step, b in (("E1", new), ("S1", new), ("S2", old)):
             I.log("lfm3-1.7b-off", "step_start", step=step, gate=None, binary=dict(b, path="x", pinned=True))
         self.assertEqual(I.model_summary("lfm3-1.7b-off")["runner"], [new, old])
+
+
+class SmolLM3(Isolated):
+    """Ümit #13462: SmolLM3-3B with thinking on; with thinking off, the format check only."""
+
+    def test_the_thinking_off_row_stops_after_its_format_check(self):
+        names = ("check_inputs", "settings_check", "ensure_runner_db", "bind_plan", "fit_check", "run_empty",
+                 "run_series", "summary", "response_ids")
+        saved = {n: getattr(I, n) for n in names}
+        calls = []
+
+        def run_step(key, s, gate):
+            calls.append((key, s))
+            I.write_atomic(I.step_dir(key, s) / "aggregate.json", json.dumps(dict(test=dict(invalid=7))))
+        try:
+            I.check_inputs = I.settings_check = I.ensure_runner_db = I.bind_plan = I.fit_check = lambda *a: None
+            I.summary = lambda *a, **k: None
+            I.response_ids = lambda key, s: [("smollm3-3b", None)]
+            I.run_empty = I.run_series = run_step
+            self.assertEqual(I.run("smollm3-3b-off"), I.STOP)
+            self.assertEqual(calls, [("smollm3-3b-off", "E1")])
+            reason = json.loads((I.mdir("smollm3-3b-off") / "stopped.json").read_text())["reason"]
+            self.assertEqual(reason, "E1: format check only: 7 of 200 answers invalid (3.5%); no series")
+            self.assertEqual(I.public_reason(reason), reason)
+            v = json.loads((I.mdir("smollm3-3b-off") / "validity.json").read_text())
+            self.assertEqual((v["invalid"], v["fired"], v["check_only"]), (7, None, True))
+            self.assertEqual(I.run("smollm3-3b-off"), I.STOP)  # stays stopped
+            self.assertEqual(I.run("smollm3-3b-on", until="S1"), 0)  # (on) plays on
+            self.assertEqual(calls[1:], [("smollm3-3b-on", "E1"), ("smollm3-3b-on", "S1")])
+        finally:
+            for n, f in saved.items():
+                setattr(I, n, f)
+
+
+class ContextFit(Isolated):
+    """Ümit #13462 item 3: the runner never cuts the note and vLLM refuses (never truncates) a prompt that does not
+    fit, so each lesson call and note is measured on the model's server first; a misfit stops the model."""
+
+    def setUp(self):
+        super().setUp()
+        self.saved = dict(self.saved, league_settings=I.league_settings)
+        self.settings = {"SmolLM2-360M-Instruct": dict(spec="openai-compatible/smollm2-360m", max_tokens=1024,
+                                                       request=dict(temperature=0)),
+                         "SmolLM3-3B (on)": dict(spec="openai-compatible/smollm3-3b", reasoning="template default",
+                                                 max_tokens=32768,
+                                                 request=dict(chat_template_kwargs=dict(enable_thinking=True)))}
+        I.league_settings = self.settings.__getitem__
+        for key, port in (("smollm2-360m", 18707), ("smollm3-3b-on", 18710)):
+            I.write_atomic(I.mdir(key) / "base_url.txt", f"http://127.0.0.1:{port}/v1")
+
+    def server(self, count, ctx):
+        self.bodies = []
+
+        def fetch(url, body):
+            self.bodies.append((url, body))
+            return json.dumps(dict(count=count, max_model_len=ctx, tokens=[]))
+        return fetch
+
+    def test_a_lesson_call_must_leave_its_max_tokens(self):
+        msgs = [dict(role="system", content="s"), dict(role="user", content="u")]
+        self.assertIsNone(I.context_fit("smollm2-360m", "the lesson call after game 1", msgs, False,
+                                        self.server(7168, 8192)))
+        url, body = self.bodies[0]
+        self.assertEqual((url, body["model"], body["add_generation_prompt"]),
+                         ("http://127.0.0.1:18707/tokenize", "smollm2-360m", True))
+        why = I.context_fit("smollm2-360m", "the lesson call after game 1", msgs, False, self.server(7169, 8192))
+        self.assertEqual(why, "lessons don't fit: the lesson call after game 1: 7169 prompt tokens + 1024 for the "
+                              "reply > max-model-len 8192")
+        self.assertEqual(I.public_reason(f"S2: {why}"), "S2: lessons don't fit the model's context")  # not '529'
+        self.assertEqual([e["fits"] for e in I.events("smollm2-360m") if e["event"] == "context_fit"], [True, False])
+
+    def test_a_play_call_with_its_note(self):
+        msgs = [dict(role="system", content="s"), dict(role="user", content="u")]
+        # reasoning off: the read-out after the prefilled answer, 1 token, plus the position margin
+        self.assertIsNone(I.context_fit("smollm2-360m", "note", msgs, True, self.server(8192 - 257, 8192)))
+        self.assertEqual((self.bodies[0][1]["messages"][-1], self.bodies[0][1]["continue_final_message"]),
+                         (dict(role="assistant", content="Answer:"), True))
+        self.assertIsNotNone(I.context_fit("smollm2-360m", "note", msgs, True, self.server(8192 - 256, 8192)))
+        # reasoning on: max_tokens and the read-out margin, the template's thinking switch sent along
+        room = 65536 - 32768 - I.READOUT_MARGIN - I.POSITION_MARGIN
+        self.assertIsNone(I.context_fit("smollm3-3b-on", "note", msgs, True, self.server(room, 65536)))
+        self.assertEqual(self.bodies[0][1]["chat_template_kwargs"], dict(enable_thinking=True))
+        self.assertIsNotNone(I.context_fit("smollm3-3b-on", "note", msgs, True, self.server(room + 1, 65536)))
+
+        def down(url, body):
+            raise OSError("no /tokenize")
+        self.assertIsNone(I.context_fit("smollm3-3b-on", "note", msgs, True, down))  # unmeasured: logged, goes ahead
+        self.assertEqual(I.events("smollm3-3b-on")[-1]["event"], "context_fit_unmeasured")
+
+    def test_the_position_is_the_longest_stored_one_without_its_note(self):
+        self.assertIsNone(I.position_messages("smollm2-360m"))
+        I.SMOKE.mkdir(parents=True)
+        db = sqlite3.connect(I.db_path("smollm2-360m"))
+        for table in ("exchanges", "answer_exchanges"):
+            db.execute(f"CREATE TABLE {table} (id INTEGER PRIMARY KEY, request TEXT)")
+        req = lambda user, note="": json.dumps(dict(messages=[  # noqa: E731
+            dict(role="system", content="SYS" + (f"\n\n{I.OPEN}\n{note}\n{I.CLOSE}" if note else "")),
+            dict(role="user", content=user)] + ([dict(role="assistant", content="x" * 500)] if note else [])))
+        db.executemany("INSERT INTO answer_exchanges (request) VALUES (?)", [(req("a" * 10),), (req("b" * 20),)])
+        db.executemany("INSERT INTO exchanges (request) VALUES (?)", [(req("c" * 30, "old lessons"),), (req("d"),)])
+        db.commit()
+        db.close()
+        self.assertEqual(I.position_messages("smollm2-360m"),
+                         [dict(role="system", content="SYS"), dict(role="user", content="c" * 30)])
 
 
 if __name__ == "__main__":

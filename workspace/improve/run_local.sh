@@ -14,8 +14,9 @@ LANE=${IMPROVE_LANE:?IMPROVE_LANE: the lane unit name}
 export IMPROVE_BIN=${IMPROVE_BIN:-$PWD/target/improve-bin/jevgammon-${IMPROVE_PIN:-e417a0c}}
 PY=/home/cbasaran/.pyenv/versions/3.12.13/bin/python3
 SERVERS=/home/cbasaran/code/jevgammon/tools/v3/servers
-# Small chat models: the league's (on) route, logic's own serve command on our card (#5119); `logic:KEY` below, with
-# small_models.py's port for KEY (test_improve checks them against SETUPS).
+# Small chat models: the league's (on) route, logic's own serve command on our card (#5119); `logic:KEY` below. Its port
+# is read from small_models.py SETUPS when the model starts (logic_port): SETUPS numbers ports by position (18600 +
+# index), so a setup inserted there moves the later ones (20 Nov: LFM3-1.7B rerun 18645 -> 18654).
 SMALL_MODELS=${IMPROVE_SMALL_MODELS:-/home/cbasaran/code/benchmark/logic/work/small_models.py}
 RUNS=/home/cbasaran/code/jevgammon/workspace/improve/runs
 server() {  # model key -> "script name port gpu-variable" (script logic:KEY: small_models.py KEY, by UUID)
@@ -23,21 +24,25 @@ server() {  # model key -> "script name port gpu-variable" (script logic:KEY: sm
     gemma-4-31b-on) echo "gemma4-31b.sh v3-gemma4-31b 8894 GEMMA_GPU" ;;
     qwen3.8-27b-on) echo "qwen38-27b.sh v3-qwen38-27b 8897 QWEN27_GPU" ;;
     lfm2.5-24b-a2b-on) echo "lfm25-24b.sh v3-lfm25-24b 8898 LFM_GPU" ;;
-    gemma-4-e4b-on) echo "logic:gemma-4-e4b-it logic-small-gemma-4-e4b-it 18602 -" ;;
-    gemma-4-e2b-on) echo "logic:gemma-4-e2b-it logic-small-gemma-4-e2b-it 18606 -" ;;
-    gemma-4-12b-on) echo "logic:gemma-4-12b-it logic-small-gemma-4-12b-it 18607 -" ;;
-    minicpm5-2b-on) echo "logic:minicpm5-2b logic-small-minicpm5-2b 18614 -" ;;
-    lfm2.5-2.6b-on) echo "logic:lfm2.5-2.6b logic-small-lfm2.5-2.6b 18613 -" ;;
-    lfm2.5-8b-a1b-on) echo "logic:lfm2.5-8b-a1b logic-small-lfm2.5-8b-a1b 18601 -" ;;
+    gemma-4-e4b-on) echo "logic:gemma-4-e4b-it logic-small-gemma-4-e4b-it - -" ;;
+    gemma-4-e2b-on) echo "logic:gemma-4-e2b-it logic-small-gemma-4-e2b-it - -" ;;
+    gemma-4-12b-on) echo "logic:gemma-4-12b-it logic-small-gemma-4-12b-it - -" ;;
+    minicpm5-2b-on) echo "logic:minicpm5-2b logic-small-minicpm5-2b - -" ;;
+    lfm2.5-2.6b-on) echo "logic:lfm2.5-2.6b logic-small-lfm2.5-2.6b - -" ;;
+    lfm2.5-8b-a1b-on) echo "logic:lfm2.5-8b-a1b logic-small-lfm2.5-8b-a1b - -" ;;
     # LFM3-1.7B (on) and (off): the server of the published LFM3-1.7B (off) row (vLLM nightly; LFM3-1.7B (on)'s twin
     # lfm3-1.7b-vllm has the same arguments); thinking is set per request by the setup.
-    lfm3-1.7b-on|lfm3-1.7b-off) echo "logic:lfm3-1.7b-vllm-rerun logic-small-lfm3-1.7b-vllm-rerun 18645 -" ;;
-    qwen3.5-2b-on) echo "logic:qwen3.5-2b logic-small-qwen3.5-2b 18646 -" ;;
-    raon-1-nano-on) echo "logic:raon-1-nano - 18647 -" ;;  # KRAFTON's vLLM fork (~/envs/raon-vllm): a process
-    smollm2-1.7b) echo "logic:smollm2-1.7b logic-small-smollm2-1.7b 18705 -" ;;
-    smollm2-360m) echo "logic:smollm2-360m logic-small-smollm2-360m 18707 -" ;;
+    lfm3-1.7b-on|lfm3-1.7b-off) echo "logic:lfm3-1.7b-vllm-rerun logic-small-lfm3-1.7b-vllm-rerun - -" ;;
+    qwen3.5-2b-on) echo "logic:qwen3.5-2b logic-small-qwen3.5-2b - -" ;;
+    raon-1-nano-on) echo "logic:raon-1-nano - - -" ;;  # KRAFTON's vLLM fork (~/envs/raon-vllm): a process
+    smollm2-1.7b) echo "logic:smollm2-1.7b logic-small-smollm2-1.7b - -" ;;
+    smollm2-360m) echo "logic:smollm2-360m logic-small-smollm2-360m - -" ;;
+    smollm3-3b-off|smollm3-3b-on) echo "logic:smollm3-3b logic-small-smollm3-3b - -" ;;  # thinking per request
     *) return 1 ;;
   esac
+}
+logic_port() {  # small_models.py SETUPS[KEY]["port"]
+  "$PY" -c 'import importlib.util as u, sys; s = u.spec_from_file_location("small_models", sys.argv[1]); m = u.module_from_spec(s); s.loader.exec_module(m); print(m.SETUPS[sys.argv[2]]["port"])' "$SMALL_MODELS" "$1"
 }
 start_server() {  # script gpu-variable index
   if [[ $1 == logic:* ]]; then python3 "$SMALL_MODELS" serve "${1#logic:}" "$UUID"
@@ -54,6 +59,9 @@ for model in "$@"; do
   # Its setup can run now (settings in v3.db, none the pinned runner drops), else no server is started for it.
   "$PY" workspace/improve/improve.py check --model "$model" || { echo "== $model: cannot run now, skipped"; continue; }
   read -r script name port var < <(server "$model") || { echo "unknown local model $model"; exit 1; }
+  if [[ $script == logic:* ]]; then
+    port=$(logic_port "${script#logic:}") || { echo "$model: no port for ${script#logic:} in $SMALL_MODELS"; exit 1; }
+  fi
   index=$(nvidia-smi -i "$UUID" --query-gpu=index,uuid --format=csv,noheader) || { echo "no GPU $UUID"; exit 1; }
   echo "== $model: host GPU $index"
   # Docker's CDI names GPUs by index here, not by UUID: the index the host gives this UUID now, and the

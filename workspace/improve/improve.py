@@ -91,6 +91,17 @@ MARKS = [(0.16, "very bad"), (0.08, "bad"), (0.04, "doubtful")]
 CREDITS_URL = "https://openrouter.ai/api/v1/credits"
 STOP, PAUSE = 2, 3  # exit codes of `run`
 
+# Inkling 2 Mini (Ümit #13780/#13810/#13811): logic's shared Inkling load on bariton GPU 0, which the lane neither
+# starts, stops nor claims (MODELS `external`: the owner's receipt, the pinned checkpoint and image, the served name,
+# the owner's container). Before every step its server must be that load (external_check), else the model pauses, and
+# it pauses as well when the load goes away during a step.
+INKLING_2_MINI_LOAD = dict(served="inkling-2-mini", container="logic-small-inkling-2-mini",
+                           receipt="/home/cbasaran/code/benchmark/logic/logs/launch/"
+                                   "inkling-2-mini-20261121T0650Z-receipt.json",
+                           repo="thinkingmachines/Inkling-2-Mini", rev="ed40e7da625f594fc9c4990f5f66be24873c22d7",
+                           image_id="sha256:c2dc759f5984f69c1e2418c6af7c26eb756f5ed2a8934c768ae1253645d1449e",
+                           max_model_len=65536)
+
 # The chat models (plan §3: the 15 of 8 Nov, then each chat model whose leaderboard row goes live later, at its
 # leaderboard setting). `settings` = the v3.db setup whose players.settings is used unchanged except name,
 # parallel, prompt_note_file, budget and (local servers) base_url. Billed models: list prices for the ledger, the
@@ -155,18 +166,13 @@ MODELS = {
     # is reported beside (on)'s.
     "smollm3-3b-off": dict(setup="SmolLM3-3B (off)", lane="local", check_only=True, expect=dict(models=["smollm3-3b"])),
     "smollm3-3b-on": dict(setup="SmolLM3-3B (on)", lane="local", expect=dict(models=["smollm3-3b"])),
-    # Inkling 2 Mini (Ümit #13780/#13810/#13811): logic's shared Inkling load on bariton GPU 0, which the lane neither
-    # starts, stops nor claims (`external`: the owner's receipt, the pinned checkpoint and image, the served name, the
-    # owner's container). Before every step its server must be that load (external_check), else the model pauses, and
-    # it pauses as well when the load goes away during a step.
+    # Inkling 2 Mini on logic's shared load (INKLING_2_MINI_LOAD). At effort 0.9 (on) most of its E1 answers used all
+    # 32,768 output tokens before naming an option (110 of 148 invalid): that row is held (hold.json), its partial E1
+    # kept (runs/inkling-2-mini-on/archive-E1-effort-0.9). It runs at effort 0.5 instead (Ümit #14049/#14136).
     "inkling-2-mini-on": dict(setup="Inkling 2 Mini (on)", lane="local", expect=dict(models=["inkling-2-mini"]),
-                              external=dict(served="inkling-2-mini", container="logic-small-inkling-2-mini",
-                                            receipt="/home/cbasaran/code/benchmark/logic/logs/launch/"
-                                                    "inkling-2-mini-20261121T0650Z-receipt.json",
-                                            repo="thinkingmachines/Inkling-2-Mini",
-                                            rev="ed40e7da625f594fc9c4990f5f66be24873c22d7",
-                                            image_id="sha256:c2dc759f5984f69c1e2418c6af7c26eb756f5ed2a8934c768ae1253645d1449e",
-                                            max_model_len=65536)),
+                              external=INKLING_2_MINI_LOAD),
+    "inkling-2-mini-e05": dict(setup="Inkling 2 Mini (on, effort 0.5)", lane="local",
+                               expect=dict(models=["inkling-2-mini"]), external=INKLING_2_MINI_LOAD),
     # Codex: the stream's served model (response.completed -> response.model), checked against the requested id (a
     # dated snapshot of it allowed): the league stored the answer text only, so there is no league evidence.
     "gpt-6.1-sol-high": dict(setup="GPT-6.1 Sol (high)", lane="subscription",
@@ -211,6 +217,11 @@ AMENDMENTS = [
               "starts nor stops it), sampled greedily as on Logic & Math (temperature 0), its first empty test a "
               "validity check as above. Its letter is read from its own answer after its reasoning: its server cannot "
               "continue a prefilled answer after a reasoning block. While that server is away, the model pauses."),
+    dict(at="2026-11-21", path="MODELS",
+         added=["inkling-2-mini-e05"], gated=["inkling-2-mini-e05"], source="Ümit #14049/#14136",
+         note="Changed: Inkling 2 Mini runs with thinking at effort 0.5 instead of 0.9, otherwise as above. At effort "
+              "0.9 most of its answers in the first empty test ran out of room: its reasoning used all 32,768 output "
+              "tokens before it named an option. That run is stopped and kept; it plays no series."),
 ]
 
 # The 2026-11-20 amendment's validity check (Ümit #13295): a gated model whose E1 has more than this share of invalid

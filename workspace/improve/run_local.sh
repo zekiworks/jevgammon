@@ -9,7 +9,7 @@
 # An external lane (UUID `external`) runs models on a shared server its owner runs (server() `external:`, MODELS
 # `external`): no GPU, no start, no stop; improve.py checks and records that server before every step and pauses the
 # model while it is not the pinned load (Inkling 2 Mini on logic's load, Ümit #13810).
-#   IMPROVE_LANE=improve-local-ink IMPROVE_PIN=c32fedb workspace/improve/run_local.sh external inkling-2-mini-on
+#   IMPROVE_LANE=improve-local-ink IMPROVE_PIN=c32fedb workspace/improve/run_local.sh external inkling-2-mini-e05
 # The runner pin: IMPROVE_BIN (run_local_start.sh sets it), else target/improve-bin/jevgammon-${IMPROVE_PIN:-e417a0c}.
 set -uo pipefail
 cd "$(dirname "$0")/../.."
@@ -43,7 +43,7 @@ server() {  # model key -> "script name port gpu-variable" (script logic:KEY: sm
     smollm2-360m) echo "logic:smollm2-360m logic-small-smollm2-360m - -" ;;
     smollm3-3b-off|smollm3-3b-on) echo "logic:smollm3-3b logic-small-smollm3-3b - -" ;;  # thinking per request
     # logic's shared Inkling load on bariton GPU 0 (owner receipt in MODELS external): never started or stopped here
-    inkling-2-mini-on) echo "external:inkling-2-mini logic-small-inkling-2-mini 18712 -" ;;
+    inkling-2-mini-on|inkling-2-mini-e05) echo "external:inkling-2-mini logic-small-inkling-2-mini 18712 -" ;;
     *) return 1 ;;
   esac
 }

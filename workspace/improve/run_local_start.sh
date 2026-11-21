@@ -10,7 +10,7 @@
 #        run_local_start.sh GPU-e4f2a538-a3dc-e777-a1b6-e083f08514aa improve-local3 improve-xid-watch3 qwen3.8-27b-on lfm2.5-24b-a2b-on
 # An external lane (models on a shared server its owner runs, run_local.sh `external:`) books no GPU and has no
 # watcher: UUID `external`, WATCH-UNIT `-`, e.g.
-#        IMPROVE_PIN=c32fedb run_local_start.sh external improve-local-ink - inkling-2-mini-on
+#        IMPROVE_PIN=c32fedb run_local_start.sh external improve-local-ink - inkling-2-mini-e05
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 UUID=${1:?GPU UUID or external}; LANE=${2:?lane unit}; WATCH=${3:?watcher unit, - for an external lane}; shift 3

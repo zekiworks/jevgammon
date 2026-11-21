@@ -98,16 +98,22 @@
   {
    "at": "2026-11-21",
    "source": "Ümit's decision of 21 Nov 2026",
-   "note": "Added 21 Nov: Inkling 2 Mini with thinking on (effort 0.9), under the same rule, lesson prompt, test and schedule, on the server it shares with Logic & Math and other benchmarks (its owner's pinned load; this run neither starts nor stops it), sampled greedily as on Logic & Math (temperature 0), its first empty test a validity check as above. Its letter is read from its own answer after its reasoning: its server cannot continue a prefilled answer after a reasoning block. While that server is away, the model pauses.",
+   "note": "Added 21 Nov: Inkling 2 Mini with thinking on (effort 0.9), under the same rule, lesson prompt, test and schedule, on the server it shares with Logic & Math and other benchmarks (its owner's pinned load; this run neither starts nor stops it), sampled greedily as on Logic & Math (temperature 0), its first empty test a validity check as above. Its letter is read from its own answer after its reasoning: its server cannot continue a prefilled answer after a reasoning block. While that server is away, the model pauses. Changed the same day: it runs with thinking at effort 0.5 instead, otherwise as above. At effort 0.9 most of its answers in the first empty test ran out of room: its reasoning used all 32,768 output tokens before it named an option. That run is stopped and kept; it plays no series.",
    "models": [
     {
      "setup": "Inkling 2 Mini (on)",
      "maker": "Thinking Machines",
      "setting": "on (effort 0.9)",
      "route": "local vLLM (Logic & Math's shared server)"
+    },
+    {
+     "setup": "Inkling 2 Mini (on, effort 0.5)",
+     "maker": "Thinking Machines",
+     "setting": "on (effort 0.5)",
+     "route": "local vLLM (Logic & Math's shared server)"
     }
    ],
-   "record": "Ümit #13780/#13810/#13811 (improve 5d4b602)"
+   "record": "Ümit #13780/#13810/#13811 (improve 5d4b602); effort 0.5: Ümit #14049/#14136 (improve 28f10d6, branch improve-ink-e05)"
   }
  ]
 }

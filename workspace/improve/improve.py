@@ -155,6 +155,18 @@ MODELS = {
     # is reported beside (on)'s.
     "smollm3-3b-off": dict(setup="SmolLM3-3B (off)", lane="local", check_only=True, expect=dict(models=["smollm3-3b"])),
     "smollm3-3b-on": dict(setup="SmolLM3-3B (on)", lane="local", expect=dict(models=["smollm3-3b"])),
+    # Inkling 2 Mini (Ümit #13780/#13810/#13811): logic's shared Inkling load on bariton GPU 0, which the lane neither
+    # starts, stops nor claims (`external`: the owner's receipt, the pinned checkpoint and image, the served name, the
+    # owner's container). Before every step its server must be that load (external_check), else the model pauses, and
+    # it pauses as well when the load goes away during a step.
+    "inkling-2-mini-on": dict(setup="Inkling 2 Mini (on)", lane="local", expect=dict(models=["inkling-2-mini"]),
+                              external=dict(served="inkling-2-mini", container="logic-small-inkling-2-mini",
+                                            receipt="/home/cbasaran/code/benchmark/logic/logs/launch/"
+                                                    "inkling-2-mini-20261121T0650Z-receipt.json",
+                                            repo="thinkingmachines/Inkling-2-Mini",
+                                            rev="ed40e7da625f594fc9c4990f5f66be24873c22d7",
+                                            image_id="sha256:c2dc759f5984f69c1e2418c6af7c26eb756f5ed2a8934c768ae1253645d1449e",
+                                            max_model_len=65536)),
     # Codex: the stream's served model (response.completed -> response.model), checked against the requested id (a
     # dated snapshot of it allowed): the league stored the answer text only, so there is no league evidence.
     "gpt-6.1-sol-high": dict(setup="GPT-6.1 Sol (high)", lane="subscription",
@@ -192,6 +204,13 @@ AMENDMENTS = [
               "off it runs the first empty test only, as a format check, and plays no series. On our own GPU, a model "
               "whose next lesson call or next game's lessons would not fit its context stops there with that reason; "
               "lessons are never shortened to fit."),
+    dict(at="2026-11-21", path="MODELS",
+         added=["inkling-2-mini-on"], gated=["inkling-2-mini-on"], source="Ümit #13780/#13810/#13811",
+         note="Added: Inkling 2 Mini with thinking on (effort 0.9), under the same rule, prompt, test and schedule, on "
+              "the server it shares with Logic & Math and other benchmarks (its owner's pinned load; this run neither "
+              "starts nor stops it), sampled greedily as on Logic & Math (temperature 0), its first empty test a "
+              "validity check as above. Its letter is read from its own answer after its reasoning: its server cannot "
+              "continue a prefilled answer after a reasoning block. While that server is away, the model pauses."),
 ]
 
 # The 2026-11-20 amendment's validity check (Ümit #13295): a gated model whose E1 has more than this share of invalid
@@ -762,6 +781,66 @@ def fit_check(key, fetch=None):
     return rec
 
 
+# A model on a shared server its owner runs (MODELS `external`: Inkling 2 Mini on logic's load, Ümit #13810): the lane
+# never starts, stops or claims it. Before each step, and whenever a step's requests fail, the server must be the
+# pinned load; while it is not, the model pauses (the failed positions are asked again, a cut series replayed, on
+# resume). The page shows the GPU wait text.
+EXTERNAL_AWAY = "waiting for a GPU: the shared server is not the pinned load"
+
+
+def external_state(key, fetch=None, inspect=None):
+    """(None or why the server cannot be used now, record) of a model's external server: the owner's receipt names
+    the pinned repo, revision, image and served name; GET /v1/models lists the served name with the pinned repo and
+    context; the owner's container runs, from the receipt's image with the receipt's arguments (`docker inspect`)."""
+    x = MODELS[key]["external"]
+    url = base_url_of(key) or league_settings(MODELS[key]["setup"])["base_url"]
+    fetch = fetch or (lambda u: urllib.request.urlopen(u, timeout=20).read().decode())
+    inspect = inspect or (lambda c: subprocess.run(["docker", "inspect", c], capture_output=True, text=True,
+                                                   timeout=60).stdout)
+    rec = dict(url=url, receipt=x["receipt"])
+    try:
+        receipt = json.loads(Path(x["receipt"]).read_text())
+    except (OSError, ValueError) as e:
+        return f"no readable owner receipt: {e}", rec
+    rec.update(receipt_sha256=sha256_file(Path(x["receipt"])), owner=receipt.get("owner"),
+               reservation=receipt.get("reservation"))
+    pinned = dict(repository=x["repo"], revision=x["rev"], image_id=x["image_id"])
+    off = {k: receipt.get(k) for k, v in pinned.items() if receipt.get(k) != v}
+    if off or x["served"] not in (receipt.get("served_models") or []):
+        return f"the owner's receipt names another load: {off or receipt.get('served_models')}", rec
+    try:
+        served = {m["id"]: m for m in json.loads(fetch(f"{url}/models"))["data"]}
+    except Exception as e:  # noqa: BLE001
+        return f"{url} does not answer: {str(e)[:200]}", rec
+    card = rec["card"] = served.get(x["served"])
+    if card is None or card.get("root") != x["repo"] or card.get("max_model_len") != x["max_model_len"]:
+        return f"{url}/models lists {sorted(served)}, {x['served']}: {card}", rec
+    try:
+        c = json.loads(inspect(x["container"]) or "[]")[0]
+    except (ValueError, IndexError, OSError, subprocess.SubprocessError) as e:
+        return f"no container {x['container']}: {e}", rec
+    args = c.get("Args") or []
+    rec.update(server="external", container=x["container"], image=(c.get("Config") or {}).get("Image"),
+               image_id=c.get("Image"), args=args, gpus=(c.get("HostConfig") or {}).get("DeviceRequests"),
+               running=(c.get("State") or {}).get("Running"), started_at=(c.get("State") or {}).get("StartedAt"))
+    if not rec["running"] or rec["image_id"] != x["image_id"] or args != receipt.get("argv") or \
+            ("--revision", x["rev"]) not in zip(args, args[1:]):
+        return (f"container {x['container']} (running {rec['running']}, image {rec['image_id']}) differs from the "
+                f"owner's receipt"), rec
+    return None, rec
+
+
+def external_gate(key, step, fetch=None, inspect=None):
+    """A model on an external server: record its server (server.json) when it is the pinned load, else pause."""
+    if DRY or not MODELS[key].get("external"):
+        return
+    why, rec = external_state(key, fetch, inspect)
+    log(key, "external_server", step=step, ok=why is None, why=why, **rec)
+    if why:
+        raise Pause(f"{step}: {EXTERNAL_AWAY}: {why}")
+    write_atomic(mdir(key) / "server.json", json.dumps(rec, indent=1))
+
+
 def run_test(key, step, name, note, workdir, ledger=None, rounds=30):
     """The 200-position test with `note` (empty = the league request) and 4 decisions in flight; failed requests
     are asked again (same prompt and context) until 200 of 200 or the rounds run out (resumable)."""
@@ -793,6 +872,8 @@ def run_test(key, step, name, note, workdir, ledger=None, rounds=30):
         budget = answer_error(key, name, "BUDGET CAP")
         if budget:
             raise BudgetRefused(budget)
+        if not test_complete(m):
+            external_gate(key, step)  # its shared server gone mid-test: pause; failed positions are asked on resume
         if r.returncode != 0 and m["answered"] == 0:
             raise RuntimeError(f"test {name} failed: {r.stderr[-1500:]}")
         if m["answered"] == POSITIONS and m["failed"] == 0:
@@ -1073,6 +1154,7 @@ def run_series(key, step, gate):
                 raise Pause(f"{step}: usage limit (429) on the subscription: {r.stderr[-600:]}")
             if "BUDGET CAP" in r.stderr:
                 raise BudgetRefused(r.stderr[-500:])
+            external_gate(key, step)  # its shared server gone: pause; the series is replayed from game 1 on resume
             raise RuntimeError(f"{key} {step}: match failed: {r.stderr[-800:]}")
         write_atomic(d / "match.done", str(match_of(key, name)[0]))
     # T10: asked in the hook after game 10; failed positions are asked again here with the stored context.
@@ -1171,6 +1253,10 @@ def write_lessons(key, step, g, record):
                 raise SystemExit(f"KEY LIMIT: lesson call after game {g}: {text[:300]}")
             if "BUDGET CAP" in r.stderr:
                 raise SystemExit(f"BUDGET CAP: lesson call refused: {r.stderr[-300:]}")
+            try:  # its shared server gone: the hook fails, so the match does, and run_series pauses the model
+                external_gate(key, step)
+            except Pause as e:
+                raise SystemExit(f"lesson call after game {g}: {e}") from None
             time.sleep(min(600, 30 * (k + 1)))
         else:
             raise SystemExit(f"lesson call after game {g} failed 20 times")
@@ -1379,8 +1465,7 @@ def run(key, until=None, balance_reader=openrouter_balance):
     (mdir(key) / "paused.json").unlink(missing_ok=True)
     ensure_runner_db(key)
     bind_plan(key)
-    if m["lane"] == "local" and not DRY:
-        fit_check(key)
+    fitted = m["lane"] != "local" or DRY  # local servers: the KV fit check once, before the first step
     billed_model = m.get("billed") and not DRY
     try:
         while (step := next_step(key)) is not None:
@@ -1391,6 +1476,10 @@ def run(key, until=None, balance_reader=openrouter_balance):
             rejected = mdir(key) / "route-rejections.jsonl"
             if rejected.exists() and rejected.stat().st_size:
                 raise Stop(f"route check: {rejected.read_text().splitlines()[0][:600]}")
+            external_gate(key, step)  # a shared server (MODELS external): the pinned load, else pause
+            if not fitted:
+                fit_check(key)
+                fitted = True
             gate = money_gate(key, step, balance_reader) if billed_model else None
             log(key, "step_start", step=step, gate=gate, binary=binary_identity())
             try:

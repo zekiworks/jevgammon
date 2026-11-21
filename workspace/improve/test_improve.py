@@ -78,12 +78,12 @@ class SmallModels(unittest.TestCase):
         self.assertEqual(I.MODELS["gemma-4-e4b-on"]["setup"], "Gemma 4 E4B (on)")
         self.assertEqual((I.MODELS["smollm2-1.7b"]["setup"], I.MODELS["smollm2-360m"]["setup"]),
                          ("SmolLM2-1.7B-Instruct", "SmolLM2-360M-Instruct"))
-        a, b, c = I.AMENDMENTS
+        a, b, c = I.AMENDMENTS[:3]
         self.assertEqual(sorted(a["added"] + b["added"] + c["added"]), sorted(self.SMALL))
         self.assertIn("1570509348072063026", a["source"])
         self.assertIn("#13295", b["source"])
         self.assertIn("#13462", c["source"])
-        self.assertEqual(I.VALIDITY_GATED, self.GATED)
+        self.assertEqual(I.VALIDITY_GATED, self.GATED | {"inkling-2-mini-on"})  # Inkling 2 Mini: class Inkling
         self.assertEqual(c["check_only"], [k for k, m in I.MODELS.items() if m.get("check_only")])
         keys = list(I.MODELS)  # Ümit #13489: SmolLM3-3B last in the small lane, (off) before (on)
         self.assertEqual(keys[keys.index("smollm2-360m") + 1:keys.index("smollm2-360m") + 3],
@@ -175,6 +175,11 @@ class SmallModels(unittest.TestCase):
                 continue
             name, watched = got.split("|")
             self.assertEqual(watched, "" if name == "-" else name, key)
+        # Inkling 2 Mini: logic's shared load, never started, stopped or watched by the lane
+        got = subprocess.run(["bash", "-c", f"{funcs}\n{container}\nread -r s name p v < <(server inkling-2-mini-on)\n"
+                              'echo "$s $name $p $v|$(container inkling-2-mini-on)"; stop_server "$s"; echo "rc $?"'],
+                             capture_output=True, text=True, check=True).stdout.splitlines()
+        self.assertEqual(got, ["external:inkling-2-mini logic-small-inkling-2-mini 18712 -|", "rc 0"])
 
 
 class Lessons(unittest.TestCase):
@@ -226,7 +231,7 @@ class Schedule(Isolated):
             rows = {k: I.progress(k, *I.model_state(k)) for k in I.MODELS}
         finally:
             I.run_active = saved_active
-        self.assertEqual(len(rows), 31)
+        self.assertEqual(len(rows), 32)
         self.assertEqual((rows[KEY]["status"], rows[KEY]["reason"], rows[KEY]["series_done"]), ("running", None, 1))
         self.assertEqual((rows["glm-5.3-on"]["status"], rows["glm-5.3-on"]["reason"]), ("paused", "shared-balance priority"))
         self.assertEqual(rows["claude-opus-5.5-on"]["reason"], "waiting for its turn")
@@ -780,6 +785,137 @@ class SmolLM3(Isolated):
             self.assertEqual(I.run("smollm3-3b-off"), I.STOP)  # stays stopped
             self.assertEqual(I.run("smollm3-3b-on", until="S1"), 0)  # (on) plays on
             self.assertEqual(calls[1:], [("smollm3-3b-on", "E1"), ("smollm3-3b-on", "S1")])
+        finally:
+            for n, f in saved.items():
+                setattr(I, n, f)
+
+
+class Inkling(Isolated):
+    """Ümit #13780/#13810/#13811: Inkling 2 Mini on logic's shared load, which the lane neither starts, stops nor
+    claims; before every step (and when a step's requests fail) the server must be the pinned load, else a pause."""
+
+    KEY = "inkling-2-mini-on"
+    X = I.MODELS[KEY]["external"]
+    ARGV = ["serve", X["repo"], "--revision", X["rev"], "--tokenizer-revision", X["rev"], "--served-model-name",
+            "inkling-2-mini", "inkling-2-mini-tools", "--port", "18712", "--max-model-len", "65536",
+            "--reasoning-parser", "inkling"]
+
+    def setUp(self):
+        super().setUp()
+        self.receipt = Path(self.tmp.name) / "receipt.json"
+        self.write_receipt()
+        self.saved = dict(self.saved, MODELS=I.MODELS)
+        I.MODELS = dict(I.MODELS, **{self.KEY: dict(I.MODELS[self.KEY], external=dict(self.X, receipt=str(self.receipt)))})
+        I.write_atomic(I.mdir(self.KEY) / "base_url.txt", "http://127.0.0.1:18712/v1")
+
+    def write_receipt(self, **kw):
+        self.receipt.write_text(json.dumps(dict(dict(
+            owner="@logic", reservation="r_x", repository=self.X["repo"], revision=self.X["rev"],
+            image_id=self.X["image_id"], served_models=["inkling-2-mini", "inkling-2-mini-tools"], argv=self.ARGV), **kw)))
+
+    def models(self, *cards):
+        return lambda url: json.dumps(dict(data=list(cards)))
+
+    CARD = dict(id="inkling-2-mini", root="thinkingmachines/Inkling-2-Mini", max_model_len=65536)
+
+    def container(self, args=None, image=None, running=True):
+        return lambda name: json.dumps([dict(Args=self.ARGV if args is None else args, Image=image or self.X["image_id"],
+                                             State=dict(Running=running, StartedAt="2026-11-21T06:49:28Z"),
+                                             Config=dict(Image="vllm/vllm-openai@sha256:c2dc"),
+                                             HostConfig=dict(DeviceRequests=[dict(DeviceIDs=["0"])]))])
+
+    def test_the_row_is_logics_load_greedy_at_effort_09_read_from_its_answer(self):
+        m = self.saved["MODELS"][self.KEY]
+        self.assertEqual((m["lane"], m["expect"], m.get("billed")), ("local", dict(models=["inkling-2-mini"]), None))
+        self.assertEqual(I.AMENDMENTS[-1]["added"], [self.KEY])
+        self.assertIn("#13810", I.AMENDMENTS[-1]["source"])
+        s = I.league_settings("Inkling 2 Mini (on)")  # v3.db player 112
+        self.assertEqual((s["spec"], s["base_url"], s["max_tokens"], s["letter_readout"], s["top_logprobs"]),
+                         ("openai-compatible/inkling-2-mini", "http://127.0.0.1:18712/v1", 32768, "answer", 20))
+        self.assertEqual(s["request"], {"chat_template_kwargs": {"reasoning_effort": 0.9}, "reasoning_effort": None,
+                                        "temperature": 0, "seed": 0})
+        self.assertFalse(set(s) & set(I.RUNNER_UNREAD))  # a prefill read-out cannot follow its reasoning block
+        real = Path(m["external"]["receipt"])
+        if real.exists():  # the owner's receipt names this very load
+            r = json.loads(real.read_text())
+            self.assertEqual((r["repository"], r["revision"], r["image_id"]), (m["external"]["repo"],
+                             m["external"]["rev"], m["external"]["image_id"]))
+            self.assertIn("inkling-2-mini", r["served_models"])
+            self.assertEqual(r["argv"][r["argv"].index("--port") + 1], "18712")
+
+    def test_the_server_must_be_the_receipts_pinned_load(self):
+        self.assertEqual(I.external_state(self.KEY, self.models(self.CARD), self.container())[0], None)
+
+        def down(url):
+            raise OSError("connection refused")
+        away = [(self.models(self.CARD), self.container(running=False)),
+                (self.models(dict(self.CARD, id="inkling-2-mini-tools")), self.container()),
+                (self.models(dict(self.CARD, max_model_len=32768)), self.container()),
+                (self.models(dict(self.CARD, root="other/repo")), self.container()),
+                (self.models(self.CARD), self.container(args=self.ARGV[:-1])),
+                (self.models(self.CARD), self.container(image="sha256:other")),
+                (self.models(self.CARD), lambda name: ""),
+                (down, self.container())]
+        for fetch, inspect in away:
+            self.assertIsNotNone(I.external_state(self.KEY, fetch, inspect)[0])
+        self.write_receipt(revision="main")
+        self.assertIn("receipt", I.external_state(self.KEY, self.models(self.CARD), self.container())[0])
+        self.write_receipt()
+        I.external_gate(self.KEY, "E1", self.models(self.CARD), self.container())
+        rec = json.loads((I.mdir(self.KEY) / "server.json").read_text())
+        self.assertEqual((rec["server"], rec["args"], rec["gpus"]), ("external", self.ARGV, [dict(DeviceIDs=["0"])]))
+        with self.assertRaises(I.Pause) as e:
+            I.external_gate(self.KEY, "S2", down, self.container())
+        self.assertTrue(str(e.exception).startswith("S2: waiting for a GPU: the shared server"), e.exception)
+        self.assertEqual(I.progress_reason(str(e.exception)), I.GPU_WAIT_TEXT)
+        self.assertRegex(I.public_reason(str(e.exception)), r"^[^<>&\x00-\x1f]{1,200}$")
+        self.assertEqual([x["ok"] for x in I.events(self.KEY) if x["event"] == "external_server"], [True, False])
+        I.external_gate("gemma-4-e4b-on", "E1", down, self.container())  # other models: no external server, no check
+
+    def test_run_pauses_while_the_server_is_away_and_plays_when_it_is_back(self):
+        names = ("check_inputs", "settings_check", "ensure_runner_db", "bind_plan", "fit_check", "run_empty",
+                 "run_series", "summary", "response_ids", "external_state")
+        saved = {n: getattr(I, n) for n in names}
+        calls, state = [], ["down"]
+
+        def run_step(key, s, gate):
+            calls.append((key, s))
+            I.write_atomic(I.step_dir(key, s) / "aggregate.json", json.dumps(dict(test=dict(invalid=3))))
+        try:
+            I.check_inputs = I.settings_check = I.ensure_runner_db = I.bind_plan = lambda *a: None
+            I.fit_check = lambda key: calls.append((key, "fit"))
+            I.summary = lambda *a, **k: None
+            I.response_ids = lambda key, s: [("inkling-2-mini", None)]
+            I.external_state = lambda key, *a: (("http://127.0.0.1:18712/v1 does not answer", {}) if state[0] == "down"
+                                                else (None, dict(server="external")))
+            I.run_empty = I.run_series = run_step
+            self.assertEqual(I.run(self.KEY), I.PAUSE)
+            self.assertEqual(calls, [])  # no fit check, no request
+            reason = json.loads((I.mdir(self.KEY) / "paused.json").read_text())["reason"]
+            self.assertTrue(reason.startswith("E1: waiting for a GPU"), reason)
+            state[0] = "up"
+            self.assertEqual(I.run(self.KEY, until="S1"), 0)
+            self.assertEqual(calls, [(self.KEY, "fit"), (self.KEY, "E1"), (self.KEY, "S1")])
+            self.assertEqual(json.loads((I.mdir(self.KEY) / "validity.json").read_text())["fired"], None)  # gated
+        finally:
+            for n, f in saved.items():
+                setattr(I, n, f)
+
+    def test_a_test_whose_server_goes_away_pauses_at_once(self):
+        names = ("ask_watched", "test_metrics", "answer_error", "vllm_load", "player_config", "external_state")
+        saved = {n: getattr(I, n) for n in names}
+        asked = []
+        try:
+            I.ask_watched = lambda *a, **k: asked.append(1) or I.Asked(1, "", "connection refused", None)
+            I.test_metrics = lambda key, name: dict(answered=200, failed=150)
+            I.answer_error = lambda *a: None
+            I.vllm_load = lambda key: None
+            I.player_config = lambda *a, **k: {}
+            I.external_state = lambda key, *a: ("http://127.0.0.1:18712/v1 does not answer", {})
+            with self.assertRaises(I.Pause) as e:
+                I.run_test(self.KEY, "E1", "Inkling 2 Mini (on) | improve | E1", "", I.step_dir(self.KEY, "E1"))
+            self.assertEqual(len(asked), 1)  # no waiting rounds
+            self.assertIn("E1: waiting for a GPU", str(e.exception))
         finally:
             for n, f in saved.items():
                 setattr(I, n, f)

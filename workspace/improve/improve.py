@@ -1512,6 +1512,8 @@ def progress_reason(reason):
         return "usage limit"
     if "shared-balance" in reason or "balance" in reason or "share limit" in reason:
         return "shared-balance priority"
+    if reason.startswith("operator hold:"):  # set aside for other work (Ümit #8603/#8637, #13675): results kept
+        return "waiting for its turn"
     raise ValueError(f"no page reason for a pause: {reason!r}")  # e.g. a Claude usage limit: needs a page text
 
 

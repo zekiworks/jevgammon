@@ -366,6 +366,42 @@
       "maker_source": "https://huggingface.co/openbmb",
       "note": "as IBM"
     },
+    "NVIDIA": {
+      "colour": "#64748b",
+      "grey": true,
+      "families": [
+        "Nemotron"
+      ],
+      "maker_source": "https://huggingface.co/nvidia",
+      "note": "as IBM"
+    },
+    "Hugging Face": {
+      "colour": "#64748b",
+      "grey": true,
+      "families": [
+        "SmolLM"
+      ],
+      "maker_source": "https://huggingface.co/HuggingFaceTB",
+      "note": "as IBM"
+    },
+    "SenseTime": {
+      "colour": "#64748b",
+      "grey": true,
+      "families": [
+        "SenseNova"
+      ],
+      "maker_source": "https://huggingface.co/sensenova",
+      "note": "as IBM"
+    },
+    "Tencent": {
+      "colour": "#64748b",
+      "grey": true,
+      "families": [
+        "Hy"
+      ],
+      "maker_source": "https://huggingface.co/tencent",
+      "note": "as IBM"
+    },
     "XHToken": {
       "colour": "#64748b",
       "grey": true,
@@ -374,7 +410,74 @@
       ],
       "maker_source": "https://huggingface.co/XHToken",
       "note": "as IBM"
-    }
+    },
+    "KRAFTON": {
+      "colour": "#64748b",
+      "grey": true,
+      "families": [
+        "Raon"
+      ],
+      "maker_source": "https://huggingface.co/KRAFTON",
+      "note": "as IBM"
+    },
+    "MachinePulse": {
+      "colour": "#64748b",
+      "grey": true,
+      "families": [
+        "Karpo"
+      ],
+      "maker_source": "https://huggingface.co/MachinePulseAI",
+      "note": "as IBM"
+    },
+    "Poindexter Labs": {
+      "colour": "#64748b",
+      "grey": true,
+      "families": [
+        "Copernicus"
+      ],
+      "maker_source": "https://huggingface.co/Poindexter-Labs",
+      "note": "as IBM"
+    },
+    "newsbang": {
+      "colour": "#64748b",
+      "grey": true,
+      "families": [
+        "Adjudex"
+      ],
+      "maker_source": "https://huggingface.co/newsbang",
+      "note": "as IBM"
+    },
+    "tattrongvu": {
+      "colour": "#64748b",
+      "grey": true,
+      "families": [
+        "Jeffan"
+      ],
+      "maker_source": "https://huggingface.co/tattrongvu",
+      "note": "as IBM"
+    },
+    "quincyqiang": {
+      "colour": "#64748b",
+      "grey": true,
+      "families": [
+        "Chinese Decision Pointer"
+      ],
+      "maker_source": "https://huggingface.co/quincyqiang",
+      "note": "as IBM"
+    },
+    "Logits": {
+      "colour": "#64748b",
+      "grey": true,
+      "families": [
+        "Logits"
+      ],
+      "maker_source": "https://huggingface.co/logitshq",
+      "note": "as IBM"
+    },
+    "victorbennett": {"colour": "#64748b", "grey": true, "families": ["Verdin"], "maker_source": "https://huggingface.co/victorbennett", "note": "as IBM"},
+    "scar-ai": {"colour": "#64748b", "grey": true, "families": ["vera"], "maker_source": "https://huggingface.co/scar-ai", "note": "as IBM"},
+    "Patrick-18": {"colour": "#64748b", "grey": true, "families": ["Dexy"], "maker_source": "https://huggingface.co/Patrick-18", "note": "as IBM"},
+    "Valen-Team": {"colour": "#64748b", "grey": true, "families": ["Valen"], "maker_source": "https://huggingface.co/Valen-Team", "note": "as IBM"}
   },
   "fixed_by_umit": [
     "OpenAI",

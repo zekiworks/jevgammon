@@ -74,9 +74,13 @@ PROGRESS = DICT(dict(status=("enum", PROGRESS_STATUSES), reason=OPT(("enum", PRO
 # The harness's state each progress status may stand with (full validation only).
 PROGRESS_STATE = {"not started": ("running", "paused"), "running": ("running",), "paused": ("paused",),
                   "stopped": ("stopped", "incomplete"), "done": ("complete",)}
+# runner: the runner pins (commit, sha256 of the jevgammon binary) the model's steps ran on, in order of first use
+# (improve 54df27f); provenance only, checked for shape and never read or shown. Absent in files before it.
+RUNNER = DICT(dict(commit=("str", r"[0-9a-f]{7,40}"), sha256=HEX64))
 MODEL = DICT(dict(key=("str", r"[a-z0-9.-]{1,60}"), setup=("str", r"[^<>&\x00-\x1f]{1,120}"), route=TEXT,
                   billed=BOOL, state=("enum", STATES), reason=OPT(TEXT), steps_done=LIST(("enum", tuple(STEPS)), 8),
-                  empty=LIST(TEST, EMPTY_RUNS), series=LIST(SERIES_SPEC, SERIES), cost=COST, progress=PROGRESS))
+                  empty=LIST(TEST, EMPTY_RUNS), series=LIST(SERIES_SPEC, SERIES), cost=COST, progress=PROGRESS),
+             dict(runner=LIST(RUNNER, 16)))
 PROTOCOL = DICT(dict(plan_sha256=HEX64, lesson_prompt_sha256=HEX64, test_set_sha256=HEX64,
                      series_per_model=INT(), games_per_series=INT(), empty_runs=INT(), test_positions=INT(),
                      steps=LIST(("str", r"[A-Z]\d"), 16), floor_points=NUM(), safety_drop_points=NUM(),
@@ -89,7 +93,8 @@ TOP = DICT(dict(updated_at=ISO, protocol=PROTOCOL, money=MONEY, models=LIST(MODE
 # The status view (pre-registration-only builds): the progress fields only; every other key of the file is allowed by
 # name and never read.
 STATUS_TOP = DICT(dict(updated_at=ISO, models=LIST(DICT(dict(setup=MODEL[1]["setup"], progress=PROGRESS),
-                                                         {k: ("any",) for k in MODEL[1] if k not in ("setup", "progress")}),
+                                                         {k: ("any",) for k in [*MODEL[1], *MODEL[2]]
+                                                          if k not in ("setup", "progress")}),
                                                     64)),
                   {k: ("any",) for k in [*TOP[1], *TOP[2]] if k not in ("updated_at", "models")})
 SHARES = ("risks_found", "right_safety", "error_rate")
@@ -302,6 +307,12 @@ def summed(tests: list) -> dict | None:
     return out
 
 
+# The harness's reasons may cite who decided a hold in parentheses ("operator hold: big-model pause (Ümit #8603, Zeki
+# #8637); ..."): the page names no internal message, so such a parenthesis is left out of the shown status. Any other
+# message number still fails checks.check_improve.
+MESSAGE_REFS = re.compile(r" \([^()]*#\d+[^()]*\)")
+
+
 def scores(m: dict, dry: bool, local: bool = False) -> dict:
     """Plan sections 2 and 6: before = mean of the empty runs, after = mean of the tests after game 10, change = after
     - before; range = max - min of the empty runs' risks found; threshold = max(range, 5); Improved = change in risks
@@ -327,7 +338,8 @@ def scores(m: dict, dry: bool, local: bool = False) -> dict:
         status = f"running{' on our GPU' if local else ''}, {finished} of {SERIES} series"
     else:  # the producer may already prefix the reason with the state ("paused: shared-balance priority, ...")
         prefix = f"{m['state']}: "
-        status = m["reason"] if m["reason"].startswith(prefix) else prefix + m["reason"]
+        reason = MESSAGE_REFS.sub("", m["reason"])
+        status = reason if reason.startswith(prefix) else prefix + reason
     return dict(before=before, after=after, change=change, range=rng, threshold=threshold, verdict=passed,
                 improved=improved, status=status, series_finished=finished, empty_done=len(m["empty"]),
                 answers_before=summed(m["empty"]), answers_after=summed(t10))

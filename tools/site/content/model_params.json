@@ -1540,6 +1540,100 @@
    "card_active_b": null,
    "card_source": "https://huggingface.co/PelaAI/KnowLine-31B-Gen2",
    "card_quote": "'# KnowLine-31B-Gen2'; card table: 'Base model | google/gemma-4-31B-it (Apache-2.0): dense, about 31B parameters'; 'Training | LoRA supervised fine-tuning of the language model component, merged into bf16 weights'."
+  },
+  "Raon-1 nano": {
+   "total_b": 3.13,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/KRAFTON/Raon-1-nano/tree/fcf2d1d55e84e2f9fbe7b5d724dcfc4d861cfcee",
+   "quote": "KRAFTON/Raon-1-nano @ fcf2d1d55e84e2f9fbe7b5d724dcfc4d861cfcee, model-00001-of-00002.safetensors and model-00002-of-00002.safetensors (BF16 and F32): 3,130,797,328 parameters (the files' safetensors headers): per-layer embedding table 1,605,894,400 (per_layer_inputs), token embeddings 399,114,240 (tied), layers 1,125,787,152, final norm 1,536. Not counted: model-tied-lm-head.safetensors (399,114,240, a materialised copy of the tied token embeddings) and the MTP module in mtp/ (54,841,898). Maker's text (card): '1.5B effective parameters (3.1B total, including a 1.5B per-layer embedding table)'.",
+   "checked": [
+    "https://huggingface.co/api/models/KRAFTON/Raon-1-nano/revision/fcf2d1d55e84e2f9fbe7b5d724dcfc4d861cfcee",
+    "https://huggingface.co/KRAFTON/Raon-1-nano/raw/fcf2d1d55e84e2f9fbe7b5d724dcfc4d861cfcee/README.md"
+   ],
+   "read": "2026-11-21",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors headers (~/.cache/huggingface/hub); the same count as logic's model_sizes.json (3,130,797,328). Dense; the card's 1.5B is its effective size without the per-layer embedding table (as Gemma 4's E-models), not a MoE active count, so no active figure. The card: 'The checkpoint on HuggingFace contains 3.2B parameters: 3.1B for the main model and 55M for the Multi-Token Prediction (MTP) module'.",
+   "terms": "3.13B incl. its per-layer embedding table; card: 1.5B effective, 3.1B total",
+   "card_total_b": 3.1,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/KRAFTON/Raon-1-nano",
+   "card_quote": "Card: 'Raon-1 nano is a dense language model with 1.5B effective parameters (3.1B total, including a 1.5B per-layer embedding table)'; 'Total Parameters | 3.1B (including the 1.5B per-layer embedding table)'."
+  },
+  "SmolLM2-1.7B-Instruct": {
+   "total_b": 1.71,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/HuggingFaceTB/SmolLM2-1.7B-Instruct/tree/31b70e2e869a7173562077fd711b654946d38674",
+   "quote": "HuggingFaceTB/SmolLM2-1.7B-Instruct @ 31b70e2e869a7173562077fd711b654946d38674, model.safetensors (218 tensors, BF16): 1,711,376,384 parameters (the file's safetensors header); LlamaForCausalLM, dense, text only, tied embeddings. Maker's text (card): 'SmolLM2 is a family of compact language models available in three size: 135M, 360M, and 1.7B parameters'.",
+   "checked": [
+    "https://huggingface.co/api/models/HuggingFaceTB/SmolLM2-1.7B-Instruct/revision/31b70e2e869a7173562077fd711b654946d38674",
+    "https://huggingface.co/HuggingFaceTB/SmolLM2-1.7B-Instruct/raw/31b70e2e869a7173562077fd711b654946d38674/README.md"
+   ],
+   "read": "2026-11-21",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors header (~/.cache/huggingface/hub). Logic's model_sizes.json gives the card's 1.7B.",
+   "terms": "1.71B; card: 1.7B",
+   "card_total_b": 1.7,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/HuggingFaceTB/SmolLM2-1.7B-Instruct",
+   "card_quote": "Card: 'SmolLM2 is a family of compact language models available in three size: 135M, 360M, and 1.7B parameters.'"
+  },
+  "SmolLM2-360M-Instruct": {
+   "total_b": 0.36,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct/tree/a10cc1512eabd3dde888204e902eca88bddb4951",
+   "quote": "HuggingFaceTB/SmolLM2-360M-Instruct @ a10cc1512eabd3dde888204e902eca88bddb4951, model.safetensors (290 tensors, BF16): 361,821,120 parameters (the file's safetensors header); LlamaForCausalLM, dense, text only, tied embeddings. Maker's text (card): 'SmolLM2 is a family of compact language models available in three size: 135M, 360M, and 1.7B parameters'.",
+   "checked": [
+    "https://huggingface.co/api/models/HuggingFaceTB/SmolLM2-360M-Instruct/revision/a10cc1512eabd3dde888204e902eca88bddb4951",
+    "https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct/raw/a10cc1512eabd3dde888204e902eca88bddb4951/README.md"
+   ],
+   "read": "2026-11-21",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors header (~/.cache/huggingface/hub). Logic's model_sizes.json gives the card's 360M.",
+   "terms": "0.36B; card: 360M",
+   "card_total_b": 0.36,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct",
+   "card_quote": "Card: 'SmolLM2 is a family of compact language models available in three size: 135M, 360M, and 1.7B parameters.'"
+  },
+  "SmolLM3-3B": {
+   "total_b": 3.08,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://huggingface.co/HuggingFaceTB/SmolLM3-3B/tree/a07cc9a04f16550a088caea529712d1d335b0ac1",
+   "quote": "HuggingFaceTB/SmolLM3-3B @ a07cc9a04f16550a088caea529712d1d335b0ac1, model-00001-of-00002.safetensors and model-00002-of-00002.safetensors (326 tensors, BF16): 3,075,098,624 parameters (the files' safetensors headers); SmolLM3ForCausalLM, dense, text only, tied embeddings. Maker's text (card): 'SmolLM3 is a 3B parameter language model'.",
+   "checked": [
+    "https://huggingface.co/api/models/HuggingFaceTB/SmolLM3-3B/revision/a07cc9a04f16550a088caea529712d1d335b0ac1",
+    "https://huggingface.co/HuggingFaceTB/SmolLM3-3B/raw/a07cc9a04f16550a088caea529712d1d335b0ac1/README.md"
+   ],
+   "read": "2026-11-21",
+   "note": "Checkpoint total at the pinned revision (#3508 rule), counted from the snapshot's safetensors headers (~/.cache/huggingface/hub); logic's model_sizes.json: checkpoint count 3.08B, the card's 3B shown.",
+   "terms": "3.08B; card: 3B",
+   "card_total_b": 3,
+   "card_active_b": null,
+   "card_source": "https://huggingface.co/HuggingFaceTB/SmolLM3-3B",
+   "card_quote": "Card: 'SmolLM3 is a 3B parameter language model designed to push the boundaries of small models.'"
+  },
+  "Inkling 2 Mini": {
+   "total_b": 26.4,
+   "active_b": 3.4,
+   "effective_b": null,
+   "moe": true,
+   "source": "https://huggingface.co/thinkingmachines/Inkling-2-Mini/blob/ed40e7da625f594fc9c4990f5f66be24873c22d7/README.md",
+   "quote": "Card, 'Parameters': '26.4B, 3.4B active'; 'each extra pass through the looped layers adds about 1.0B effective active parameters. Since the model runs with three passes, there are 5.4B effective active parameters per token.'",
+   "checked": [
+    "https://huggingface.co/api/models/thinkingmachines/Inkling-2-Mini/revision/ed40e7da625f594fc9c4990f5f66be24873c22d7",
+    "https://huggingface.co/thinkingmachines/Inkling-2-Mini/raw/ed40e7da625f594fc9c4990f5f66be24873c22d7/README.md"
+   ],
+   "read": "2026-11-21",
+   "note": "Open weights, MoE (thinkingmachines/Inkling-2-Mini @ ed40e7da625f594fc9c4990f5f66be24873c22d7). The release ships only NVFP4/MXFP8-quantized weights (ModelOpt): its safetensors headers hold 17,915,807,416 storage elements, 10,319,560,704 of them U8-packed and 5,350,883,328 FP8 plus scales, so their sum is not a logical parameter count; the card's figures are used, as for Kimi K3.1 Pro and as logic's model_sizes.json.",
+   "card_total_b": 26.4,
+   "card_active_b": 3.4,
+   "card_source": "https://huggingface.co/thinkingmachines/Inkling-2-Mini",
+   "card_quote": "Card, 'Parameters': '26.4B, 3.4B active'."
   }
  }
 }

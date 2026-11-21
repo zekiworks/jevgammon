@@ -190,6 +190,16 @@
    "name": "Cerno",
    "icon": "fi-cerno",
    "match": "^(?:Cerno)"
+  },
+  {
+   "name": "Raon",
+   "icon": "fi-raon",
+   "match": "^(?:Raon)"
+  },
+  {
+   "name": "SmolLM",
+   "icon": "fi-smollm",
+   "match": "^(?:SmolLM)"
   }
  ]
 }

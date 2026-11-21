@@ -4,7 +4,7 @@
   {
    "at": "2026-11-12",
    "source": "Ümit's decision of 12 Nov 2026",
-   "note": "Added 12 Nov, after the plan was published: the Tiny and Small chat models tested on Logic & Math, each at its highest reasoning setting, under the same rule, lesson prompt, test and schedule. Listed here once the setup's settings are in the league database; Gemma 4 E2B, Gemma 4 12B, Erk-14B and Qwen3-14B follow when theirs are.",
+   "note": "Added 12 Nov, after the plan was published: the Tiny and Small chat models tested on Logic & Math, each at its highest reasoning setting, under the same rule, lesson prompt, test and schedule. Listed here once the setup's settings are in the league database; Gemma 4 12B, Erk-14B and Qwen3-14B follow when theirs are.",
    "models": [
     {
      "setup": "Gemma 4 E4B (on)",
@@ -34,10 +34,80 @@
      "setup": "LFM3-1.7B (on)",
      "maker": "Liquid AI",
      "setting": "on",
-     "route": "local llama.cpp"
+     "route": "local vLLM"
+    },
+    {
+     "setup": "Gemma 4 E2B (on)",
+     "maker": "Google",
+     "setting": "on",
+     "route": "local vLLM"
     }
    ],
    "record": "Ümit native 1570509348072063026 (cohort) and 1570507658425933987 (priority and cash), relayed by Zeki #5674/#5689 (not shown: the page names no internal message)"
+  },
+  {
+   "at": "2026-11-20",
+   "source": "Ümit's decisions of 20 Nov 2026",
+   "note": "Added 20 Nov: the small models of 2B or less on our own GPU (LFM3-1.7B also with thinking off, Qwen3.5-2B, Raon-1 nano, SmolLM2-1.7B, SmolLM2-360M), under the same rule, lesson prompt, test and schedule, each with the settings of its league setup. For these and LFM3-1.7B, MiniCPM5-2B and Gemma 4 E2B, the first empty test is a validity check: a model with more than 10% invalid answers there (more than 20 of 200) stops and plays no series. Then SmolLM3-3B with thinking on, with the card's sampling (temperature 0.6, top_p 0.95), its first empty test a validity check as above; with thinking off it runs the first empty test only, as a format check, and plays no series. On our own GPU, a model whose next lesson call or next game's lessons would not fit its context stops there with that reason; lessons are never shortened to fit.",
+   "models": [
+    {
+     "setup": "LFM3-1.7B (off)",
+     "maker": "Liquid AI",
+     "setting": "off",
+     "route": "local vLLM"
+    },
+    {
+     "setup": "Qwen3.5-2B (on)",
+     "maker": "Alibaba (Qwen)",
+     "setting": "on",
+     "route": "local vLLM"
+    },
+    {
+     "setup": "Raon-1 nano (on)",
+     "maker": "KRAFTON",
+     "setting": "on",
+     "route": "local vLLM"
+    },
+    {
+     "setup": "SmolLM2-1.7B-Instruct",
+     "maker": "Hugging Face",
+     "setting": "no reasoning setting",
+     "route": "local vLLM"
+    },
+    {
+     "setup": "SmolLM2-360M-Instruct",
+     "maker": "Hugging Face",
+     "setting": "no reasoning setting",
+     "route": "local vLLM"
+    },
+    {
+     "setup": "SmolLM3-3B (on)",
+     "maker": "Hugging Face",
+     "setting": "on",
+     "route": "local vLLM"
+    },
+    {
+     "setup": "SmolLM3-3B (off)",
+     "maker": "Hugging Face",
+     "setting": "off (format check only: first empty test, no series)",
+     "route": "local vLLM"
+    }
+   ],
+   "record": "Ümit #13295 (small models of 2B or less) and #13462/#13489 (SmolLM3-3B), relayed in the harness's amendments (improve 5092ff4, e82a5c7)"
+  },
+  {
+   "at": "2026-11-21",
+   "source": "Ümit's decision of 21 Nov 2026",
+   "note": "Added 21 Nov: Inkling 2 Mini with thinking on (effort 0.9), under the same rule, lesson prompt, test and schedule, on the server it shares with Logic & Math and other benchmarks (its owner's pinned load; this run neither starts nor stops it), sampled greedily as on Logic & Math (temperature 0), its first empty test a validity check as above. Its letter is read from its own answer after its reasoning: its server cannot continue a prefilled answer after a reasoning block. While that server is away, the model pauses.",
+   "models": [
+    {
+     "setup": "Inkling 2 Mini (on)",
+     "maker": "Thinking Machines",
+     "setting": "on (effort 0.9)",
+     "route": "local vLLM (Logic & Math's shared server)"
+    }
+   ],
+   "record": "Ümit #13780/#13810/#13811 (improve 5d4b602)"
   }
  ]
 }

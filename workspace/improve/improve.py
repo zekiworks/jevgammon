@@ -166,12 +166,14 @@ MODELS = {
     # is reported beside (on)'s.
     "smollm3-3b-off": dict(setup="SmolLM3-3B (off)", lane="local", check_only=True, expect=dict(models=["smollm3-3b"])),
     "smollm3-3b-on": dict(setup="SmolLM3-3B (on)", lane="local", expect=dict(models=["smollm3-3b"])),
-    # Inkling 2 Mini on logic's shared load (INKLING_2_MINI_LOAD). At effort 0.9 (on) most of its E1 answers used all
-    # 32,768 output tokens before naming an option (110 of 148 invalid): that row is held (hold.json), its partial E1
-    # kept (runs/inkling-2-mini-on/archive-E1-effort-0.9). It runs at effort 0.5 instead (Ümit #14049/#14136).
+    # Inkling 2 Mini on logic's shared load (INKLING_2_MINI_LOAD). Effort 0.9 stopped after 110 of its first 148
+    # answers used all 32,768 output tokens; effort 0.5 stopped after 40 of 200 did. Ümit's dated 23 Nov order tries
+    # effort 0.2 first. Every row is kept; the two failed attempts play no series.
     "inkling-2-mini-on": dict(setup="Inkling 2 Mini (on)", lane="local", expect=dict(models=["inkling-2-mini"]),
                               external=INKLING_2_MINI_LOAD),
     "inkling-2-mini-e05": dict(setup="Inkling 2 Mini (on, effort 0.5)", lane="local",
+                               expect=dict(models=["inkling-2-mini"]), external=INKLING_2_MINI_LOAD),
+    "inkling-2-mini-e02": dict(setup="Inkling 2 Mini (on, effort 0.2)", lane="local",
                                expect=dict(models=["inkling-2-mini"]), external=INKLING_2_MINI_LOAD),
     # Codex: the stream's served model (response.completed -> response.model), checked against the requested id (a
     # dated snapshot of it allowed): the league stored the answer text only, so there is no league evidence.
@@ -219,9 +221,15 @@ AMENDMENTS = [
               "continue a prefilled answer after a reasoning block. While that server is away, the model pauses."),
     dict(at="2026-11-21", path="MODELS",
          added=["inkling-2-mini-e05"], gated=["inkling-2-mini-e05"], source="Ümit #14049/#14136",
-         note="Changed: Inkling 2 Mini runs with thinking at effort 0.5 instead of 0.9, otherwise as above. At effort "
-              "0.9 most of its answers in the first empty test ran out of room: its reasoning used all 32,768 output "
-              "tokens before it named an option. That run is stopped and kept; it plays no series."),
+         note="Changed: Inkling 2 Mini was tried with thinking at effort 0.5 instead of 0.9, otherwise as above. It "
+              "also stopped at the validity check: 40 of 200 answers used all 32,768 output tokens without naming an "
+              "option, above the 10% invalid-answer limit; it played no series."),
+    dict(at="2026-11-23", path="MODELS",
+         added=["inkling-2-mini-e02"], gated=["inkling-2-mini-e02"], source="Ümit #15121",
+         note="First retry after the two stopped attempts: effort 0.2, temperature 0 and the same 32,768-token limit. "
+              "Its first empty run is the validity check; if at most 20 of 200 answers are invalid, it plays the full "
+              "schedule. This was chosen first because most capped answers were still reasoning normally, not "
+              "repeating at the end."),
 ]
 
 # The 2026-11-20 amendment's validity check (Ümit #13295): a gated model whose E1 has more than this share of invalid

@@ -84,7 +84,8 @@ class SmallModels(unittest.TestCase):
         self.assertIn("#13295", b["source"])
         self.assertIn("#13462", c["source"])
         self.assertEqual(I.VALIDITY_GATED,
-                         self.GATED | {"inkling-2-mini-on", "inkling-2-mini-e05", "inkling-2-mini-e02"})
+                         self.GATED | {"lfm2.5-24b-a2b-off", "inkling-2-mini-on", "inkling-2-mini-e05",
+                                       "inkling-2-mini-e02"})
         self.assertEqual(c["check_only"], [k for k, m in I.MODELS.items() if m.get("check_only")])
         keys = list(I.MODELS)  # Ümit #13489: SmolLM3-3B last in the small lane, (off) before (on)
         self.assertEqual(keys[keys.index("smollm2-360m") + 1:keys.index("smollm2-360m") + 3],
@@ -233,7 +234,7 @@ class Schedule(Isolated):
             rows = {k: I.progress(k, *I.model_state(k)) for k in I.MODELS}
         finally:
             I.run_active = saved_active
-        self.assertEqual(len(rows), 34)
+        self.assertEqual(len(rows), 35)
         self.assertEqual((rows[KEY]["status"], rows[KEY]["reason"], rows[KEY]["series_done"]), ("running", None, 1))
         self.assertEqual((rows["glm-5.3-on"]["status"], rows["glm-5.3-on"]["reason"]), ("paused", "shared-balance priority"))
         self.assertEqual(rows["claude-opus-5.5-on"]["reason"], "waiting for its turn")
@@ -792,6 +793,25 @@ class SmolLM3(Isolated):
                 setattr(I, n, f)
 
 
+class LFM25Off(unittest.TestCase):
+    """Ümit's 23 Nov decision: the existing thinking-off league setup runs locally after Qwen3.5-2B."""
+
+    KEY = "lfm2.5-24b-a2b-off"
+
+    def test_it_uses_the_existing_off_setup_and_is_validity_gated(self):
+        m = I.MODELS[self.KEY]
+        self.assertEqual((m["lane"], m["expect"], m.get("billed")),
+                         ("local", {"models": ["lfm2.5-24b-a2b"]}, None))
+        self.assertEqual(I.AMENDMENTS[-1]["added"], [self.KEY])
+        self.assertEqual(I.AMENDMENTS[-1]["gated"], [self.KEY])
+        self.assertIn("immediately after Qwen3.5-2B", I.AMENDMENTS[-1]["note"])
+        s = I.league_settings("LFM2.5-24B-A2B (off)")
+        self.assertEqual((s["spec"], s["base_url"], s["request"], s["max_tokens"], s["letter_readout"],
+                          s["answer_prefix"]),
+                         ("openai-compatible/lfm2.5-24b-a2b", "http://127.0.0.1:8898/v1", {}, 32000,
+                          "prefill", "<think></think>Answer:"))
+
+
 class Inkling(Isolated):
     """Ümit #13780/#13810/#13811: Inkling 2 Mini on logic's shared load, which the lane neither starts, stops nor
     claims; before every step (and when a step's requests fail) the server must be the pinned load, else a pause."""
@@ -829,8 +849,8 @@ class Inkling(Isolated):
     def test_the_row_is_logics_load_greedy_at_effort_09_read_from_its_answer(self):
         m = self.saved["MODELS"][self.KEY]
         self.assertEqual((m["lane"], m["expect"], m.get("billed")), ("local", dict(models=["inkling-2-mini"]), None))
-        self.assertEqual(I.AMENDMENTS[-3]["added"], [self.KEY])
-        self.assertIn("#13810", I.AMENDMENTS[-3]["source"])
+        self.assertEqual(I.AMENDMENTS[-4]["added"], [self.KEY])
+        self.assertIn("#13810", I.AMENDMENTS[-4]["source"])
         s = I.league_settings("Inkling 2 Mini (on)")  # v3.db player 112
         self.assertEqual((s["spec"], s["base_url"], s["max_tokens"], s["letter_readout"], s["top_logprobs"]),
                          ("openai-compatible/inkling-2-mini", "http://127.0.0.1:18712/v1", 32768, "answer", 20))
@@ -849,9 +869,9 @@ class Inkling(Isolated):
         """Ümit #14049/#14136: at 0.9 most E1 answers ran out of room; the rerun differs from 112 in its effort only."""
         on, e05 = self.saved["MODELS"][self.KEY], self.saved["MODELS"]["inkling-2-mini-e05"]
         self.assertEqual({k: v for k, v in e05.items() if k != "setup"}, {k: v for k, v in on.items() if k != "setup"})
-        self.assertEqual(I.AMENDMENTS[-2]["added"], ["inkling-2-mini-e05"])
-        self.assertEqual(I.AMENDMENTS[-2]["gated"], ["inkling-2-mini-e05"])
-        self.assertNotRegex(I.AMENDMENTS[-2]["note"], r"#\d")
+        self.assertEqual(I.AMENDMENTS[-3]["added"], ["inkling-2-mini-e05"])
+        self.assertEqual(I.AMENDMENTS[-3]["gated"], ["inkling-2-mini-e05"])
+        self.assertNotRegex(I.AMENDMENTS[-3]["note"], r"#\d")
         a, b = I.league_settings("Inkling 2 Mini (on)"), I.league_settings("Inkling 2 Mini (on, effort 0.5)")
         self.assertEqual(b["request"], dict(a["request"], chat_template_kwargs={"reasoning_effort": 0.5}))
         self.assertEqual((b["name"], b["reasoning"]), ("Inkling 2 Mini (on, effort 0.5)", "0.5"))
@@ -863,9 +883,9 @@ class Inkling(Isolated):
         """Ümit #15121: mostly non-looping cap failures make effort 0.2 the first and separately named retry."""
         on, e02 = self.saved["MODELS"][self.KEY], self.saved["MODELS"]["inkling-2-mini-e02"]
         self.assertEqual({k: v for k, v in e02.items() if k != "setup"}, {k: v for k, v in on.items() if k != "setup"})
-        self.assertEqual(I.AMENDMENTS[-1]["added"], ["inkling-2-mini-e02"])
-        self.assertEqual(I.AMENDMENTS[-1]["gated"], ["inkling-2-mini-e02"])
-        self.assertNotRegex(I.AMENDMENTS[-1]["note"], r"#\d")
+        self.assertEqual(I.AMENDMENTS[-2]["added"], ["inkling-2-mini-e02"])
+        self.assertEqual(I.AMENDMENTS[-2]["gated"], ["inkling-2-mini-e02"])
+        self.assertNotRegex(I.AMENDMENTS[-2]["note"], r"#\d")
         a, b = I.league_settings("Inkling 2 Mini (on)"), I.league_settings("Inkling 2 Mini (on, effort 0.2)")
         self.assertEqual(b["request"], dict(a["request"], chat_template_kwargs={"reasoning_effort": 0.2}))
         self.assertEqual((b["name"], b["reasoning"]), ("Inkling 2 Mini (on, effort 0.2)", "0.2"))

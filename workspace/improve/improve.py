@@ -139,6 +139,8 @@ MODELS = {
     "gemma-4-31b-on": dict(setup="Gemma 4 31B (on)", lane="local", expect=dict(models=["gemma-4-31B-it"])),
     "qwen3.8-27b-on": dict(setup="Qwen3.8-27B (on)", lane="local", expect=dict(models=["qwen3.8-27b"])),
     "lfm2.5-24b-a2b-on": dict(setup="LFM2.5-24B-A2B (on)", lane="local", expect=dict(models=["lfm2.5-24b-a2b"])),
+    "lfm2.5-24b-a2b-off": dict(setup="LFM2.5-24B-A2B (off)", lane="local",
+                                   expect=dict(models=["lfm2.5-24b-a2b"])),
     # Small chat models: the amendment below (AMENDMENTS). Each at its highest reasoning setting, run with its v3.db
     # players.settings like every row (a setup not yet in v3.db is refused by `run`: no settings, no run); local, on
     # logic's small_models.py server on our card (#5119); response id = the served name (the league's replies carry
@@ -230,6 +232,14 @@ AMENDMENTS = [
               "Its first empty run is the validity check; if at most 20 of 200 answers are invalid, it plays the full "
               "schedule. This was chosen first because most capped answers were still reasoning normally, not "
               "repeating at the end."),
+    dict(at="2026-11-23", path="MODELS",
+         added=["lfm2.5-24b-a2b-off"], gated=["lfm2.5-24b-a2b-off"],
+         source="Ümit's decision of 23 Nov 2026",
+         note="Added: LFM2.5-24B-A2B with thinking off at its league setup, on our GPU at no billed cost, queued "
+              "immediately after Qwen3.5-2B. Its first empty run is the 200-position validity check: at most 20 "
+              "invalid answers passes, then it plays the full schedule. Before each later step, the same context-fit "
+              "check applies: if its next lesson call or game's lessons would not fit, it stops there and lessons are "
+              "never shortened."),
 ]
 
 # The 2026-11-20 amendment's validity check (Ümit #13295): a gated model whose E1 has more than this share of invalid

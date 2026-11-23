@@ -27,7 +27,7 @@ server() {  # model key -> "script name port gpu-variable" (script logic:KEY: sm
   case $1 in
     gemma-4-31b-on) echo "gemma4-31b.sh v3-gemma4-31b 8894 GEMMA_GPU" ;;
     qwen3.8-27b-on) echo "qwen38-27b.sh v3-qwen38-27b 8897 QWEN27_GPU" ;;
-    lfm2.5-24b-a2b-on) echo "lfm25-24b.sh v3-lfm25-24b 8898 LFM_GPU" ;;
+    lfm2.5-24b-a2b-on|lfm2.5-24b-a2b-off) echo "lfm25-24b.sh v3-lfm25-24b 8898 LFM_GPU" ;;
     gemma-4-e4b-on) echo "logic:gemma-4-e4b-it logic-small-gemma-4-e4b-it - -" ;;
     gemma-4-e2b-on) echo "logic:gemma-4-e2b-it logic-small-gemma-4-e2b-it - -" ;;
     gemma-4-12b-on) echo "logic:gemma-4-12b-it logic-small-gemma-4-12b-it - -" ;;

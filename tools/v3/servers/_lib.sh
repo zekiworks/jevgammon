@@ -52,7 +52,12 @@ docker_up() {
   fi
   docker rm -f "$name" >/dev/null 2>&1 || true
   port_busy "$port" && die "$name: port $port is in use by something else"
-  docker run -d --name "$name" "$@" >/dev/null
+  if [[ -n ${AGENT_BUS_RESERVATION:-} ]]; then
+    agent-bus run "$AGENT_BUS_RESERVATION" -- docker run -d --name "$name" \
+      --label "agent-bus.reservation=$AGENT_BUS_RESERVATION" --label agent-bus.agent=jevgammon "$@" >/dev/null
+  else
+    docker run -d --name "$name" "$@" >/dev/null
+  fi
   echo "$name: container started"
 }
 

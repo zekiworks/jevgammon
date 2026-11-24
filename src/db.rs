@@ -602,7 +602,7 @@ pub struct DecisionLog<'a> {
     pub in_flight: Option<usize>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct Exchange {
     pub request: String,
     pub response: Option<String>,

@@ -7,8 +7,9 @@ use std::path::PathBuf;
 use std::time::Instant;
 
 use anyhow::{Context as _, Result};
-use serde_json::json;
+use serde_json::{json, Value};
 
+use crate::db::Exchange;
 use crate::http::RetryTime;
 use crate::players::{Player, PlayerConfig, Setup};
 
@@ -18,6 +19,10 @@ pub struct LessonArgs {
     pub system: PathBuf,
     pub user: PathBuf,
     pub out: PathBuf,
+}
+
+fn exchange_log(exchanges: &[Exchange]) -> Value {
+    json!(exchanges)
 }
 
 pub async fn lesson(args: LessonArgs, setup: &Setup) -> Result<()> {
@@ -51,12 +56,7 @@ pub async fn lesson(args: LessonArgs, setup: &Setup) -> Result<()> {
         "in_flight": decision.in_flight,
         "wall_ms": wall_ms,
         "retry_ms": retry.get().as_millis() as u64,
-        "exchanges": decision.exchanges.iter().map(|e| json!({
-            "request": e.request,
-            "response": e.response,
-            "error": e.error,
-            "latency_ms": e.latency_ms,
-        })).collect::<Vec<_>>(),
+        "exchanges": exchange_log(&decision.exchanges),
         "created_at": chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
     });
     let tmp = args.out.with_extension("json.tmp");
@@ -64,4 +64,28 @@ pub async fn lesson(args: LessonArgs, setup: &Setup) -> Result<()> {
         .with_context(|| format!("writing {}", tmp.display()))?;
     std::fs::rename(&tmp, &args.out)?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn lesson_exchange_log_keeps_checked_identity() {
+        let exchanges = [Exchange {
+            request: "{}".to_owned(),
+            response: Some("A".to_owned()),
+            error: None,
+            latency_ms: 12,
+            identity: Some(
+                r#"{"result":"accepted","fields":{"model":"gpt-6.2-astra"}}"#.to_owned(),
+            ),
+        }];
+        assert_eq!(
+            exchange_log(&exchanges)
+                .pointer("/0/identity")
+                .and_then(Value::as_str),
+            exchanges[0].identity.as_deref()
+        );
+    }
 }

@@ -865,6 +865,17 @@ class SubscriptionSuccessors(unittest.TestCase):
                               settings.get("max_tokens"), settings["parallel"]),
                              (provider, spec, reasoning, max_tokens, 4))
 
+    def test_carbon_uses_the_verified_antigravity_route_after_neon(self):
+        key = "gemini-4-carbon-high"
+        model = I.MODELS[key]
+        amendment = next(a for a in I.AMENDMENTS if a.get("added") == [key])
+        self.assertIn("after Gemini 4 Neon", amendment["note"])
+        self.assertEqual(model["expect"],
+                         {"models": ["gemini-4-carbon"], "model_pointer": "/response/modelVersion"})
+        settings = I.model_settings(key)
+        self.assertEqual((settings["provider"], settings["spec"], settings["reasoning"], settings["parallel"]),
+                         ("antigravity-subscription", "antigravity/gemini-4-carbon", "high", 4))
+
 
 
 

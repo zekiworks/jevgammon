@@ -193,6 +193,21 @@ MODELS = {
                              expect=dict(models=["gpt-6.2-sol"], allow_dated=True)),
     "gemini-4-neon-high": dict(setup="Gemini 4 Neon (high)", lane="subscription",
                                expect=dict(models=["gemini-4-neon"], model_pointer="/response/modelVersion")),
+    "gemini-4-carbon-high": dict(
+        setup="Gemini 4 Carbon (high)",
+        lane="subscription",
+        expect=dict(models=["gemini-4-carbon"], model_pointer="/response/modelVersion"),
+        settings=dict(
+            name="Gemini 4 Carbon (high)",
+            spec="antigravity/gemini-4-carbon",
+            provider="antigravity-subscription",
+            reasoning="high",
+            price=dict(input_per_mtok=2.0, output_per_mtok=10.0),
+            note="Thinking high; Google Antigravity subscription using OMP's login; "
+                 "queued after Gemini 4 Neon by Ümit #16426.",
+            parallel=4,
+        ),
+    ),
     "claude-fable-5.2-high": dict(setup="Claude Fable 5.2 (high)", lane="subscription", quota_pause=True,
                                   expect=dict(models=["claude-fable-5-2"])),
     "qwen4-max-high": dict(
@@ -290,6 +305,10 @@ AMENDMENTS = [
               "at reasoning high; Claude Fable 5.2 uses the separate Claude subscription at adaptive-thinking effort "
               "high with a 32,768-token output limit. Subscription use is prioritized ahead of a new paid API route. "
               "Claude Opus 5.5 is not rerun: its existing Learning run is already complete."),
+    dict(at="2026-11-24", path="MODELS", added=["gemini-4-carbon-high"], source="Ümit #16426",
+         note="Added: Gemini 4 Carbon through the Antigravity subscription at thinking high, under the same rule, "
+              "prompt, test and schedule. It runs after Gemini 4 Neon without interrupting Neon. The stored route "
+              "smoke reply identifies itself as gemini-4-carbon; no paid API route is used."),
     dict(at="2026-11-24", path="MODELS", added=["qwen4-max-high"], source="Ümit #16378/#16380/#16384",
          note="Focused newest-model cohort starts one paid model at a time. Qwen4 Max runs first at reasoning high, "
               "maker defaults otherwise, pinned to Alibaba's OpenRouter endpoint with fallbacks off. Run E1 only, "

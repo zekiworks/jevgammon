@@ -933,13 +933,18 @@ class Inkling(Isolated):
         self.assertEqual(same(b), same(a))
         self.assertIn("effort 0.5 (chat_template_kwargs reasoning_effort 0.5", b["note"])
 
-    def test_effort_02_is_the_first_retry_and_changes_only_the_effort(self):
-        """Ümit #15121: mostly non-looping cap failures make effort 0.2 the first and separately named retry."""
+    def test_effort_02_is_the_first_retry_and_uses_learnings_compatible_load(self):
+        """Ümit #15121/#15388: effort 0.2 is first; after Logic's load went away, Learning loaded one compatible copy."""
         on, e02 = self.saved["MODELS"][self.KEY], self.saved["MODELS"]["inkling-2-mini-e02"]
-        self.assertEqual({k: v for k, v in e02.items() if k != "setup"}, {k: v for k, v in on.items() if k != "setup"})
+        self.assertEqual({k: v for k, v in e02.items() if k not in ("setup", "external")},
+                         {k: v for k, v in on.items() if k not in ("setup", "external")})
+        self.assertEqual(e02["external"], I.INKLING_2_MINI_E02_LOAD)
+        self.assertEqual(e02["external"]["receipt"],
+                         "/home/cbasaran/.cache/learn-inkling/admit-e02/inkling-2-mini-e02-receipt.json")
         self.assertEqual(I.AMENDMENTS[-3]["added"], ["inkling-2-mini-e02"])
         self.assertEqual(I.AMENDMENTS[-3]["gated"], ["inkling-2-mini-e02"])
         self.assertNotRegex(I.AMENDMENTS[-3]["note"], r"#\d")
+        self.assertIn("Learning loaded one compatible copy", I.AMENDMENTS[-3]["note"])
         a, b = I.league_settings("Inkling 2 Mini (on)"), I.league_settings("Inkling 2 Mini (on, effort 0.2)")
         self.assertEqual(b["request"], dict(a["request"], chat_template_kwargs={"reasoning_effort": 0.2}))
         self.assertEqual((b["name"], b["reasoning"]), ("Inkling 2 Mini (on, effort 0.2)", "0.2"))

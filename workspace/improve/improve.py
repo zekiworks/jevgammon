@@ -91,16 +91,19 @@ MARKS = [(0.16, "very bad"), (0.08, "bad"), (0.04, "doubtful")]
 CREDITS_URL = "https://openrouter.ai/api/v1/credits"
 STOP, PAUSE = 2, 3  # exit codes of `run`
 
-# Inkling 2 Mini (Ümit #13780/#13810/#13811): logic's shared Inkling load on bariton GPU 0, which the lane neither
-# starts, stops nor claims (MODELS `external`: the owner's receipt, the pinned checkpoint and image, the served name,
-# the owner's container). Before every step its server must be that load (external_check), else the model pauses, and
-# it pauses as well when the load goes away during a step.
+# Inkling 2 Mini's first two attempts used Logic's shared load, which the lane neither started, stopped nor claimed.
+# The effort-0.2 retry uses Learning's single compatible load on GPU 2 after Logic's load was gone (Ümit #15388).
+# Before every step the server must match its owner's receipt, pinned checkpoint/image, served name and container
+# (MODELS `external`); otherwise the model pauses, as it does when the load goes away during a step.
 INKLING_2_MINI_LOAD = dict(served="inkling-2-mini", container="logic-small-inkling-2-mini",
                            receipt="/home/cbasaran/code/benchmark/logic/logs/launch/"
                                    "inkling-2-mini-20261121T0650Z-receipt.json",
                            repo="thinkingmachines/Inkling-2-Mini", rev="ed40e7da625f594fc9c4990f5f66be24873c22d7",
                            image_id="sha256:c2dc759f5984f69c1e2418c6af7c26eb756f5ed2a8934c768ae1253645d1449e",
                            max_model_len=65536)
+INKLING_2_MINI_E02_LOAD = dict(INKLING_2_MINI_LOAD,
+                               receipt="/home/cbasaran/.cache/learn-inkling/admit-e02/"
+                                       "inkling-2-mini-e02-receipt.json")
 
 # The chat models (plan §3: the 15 of 8 Nov, then each chat model whose leaderboard row goes live later, at its
 # leaderboard setting). `settings` = the v3.db setup whose players.settings is used unchanged except name,
@@ -168,15 +171,15 @@ MODELS = {
     # is reported beside (on)'s.
     "smollm3-3b-off": dict(setup="SmolLM3-3B (off)", lane="local", check_only=True, expect=dict(models=["smollm3-3b"])),
     "smollm3-3b-on": dict(setup="SmolLM3-3B (on)", lane="local", expect=dict(models=["smollm3-3b"])),
-    # Inkling 2 Mini on logic's shared load (INKLING_2_MINI_LOAD). Effort 0.9 stopped after 110 of its first 148
-    # answers used all 32,768 output tokens; effort 0.5 stopped after 40 of 200 did. Ümit's dated 23 Nov order tries
-    # effort 0.2 first. Every row is kept; the two failed attempts play no series.
+    # Inkling 2 Mini. Effort 0.9 stopped after 110 of its first 148 answers used all 32,768 output tokens; effort 0.5
+    # stopped after 40 of 200 did. Ümit's dated 23 Nov order tries effort 0.2 first. Every row is kept; the two failed
+    # attempts play no series. The effort-0.2 retry uses Learning's own one-copy load (INKLING_2_MINI_E02_LOAD).
     "inkling-2-mini-on": dict(setup="Inkling 2 Mini (on)", lane="local", expect=dict(models=["inkling-2-mini"]),
                               external=INKLING_2_MINI_LOAD),
     "inkling-2-mini-e05": dict(setup="Inkling 2 Mini (on, effort 0.5)", lane="local",
                                expect=dict(models=["inkling-2-mini"]), external=INKLING_2_MINI_LOAD),
     "inkling-2-mini-e02": dict(setup="Inkling 2 Mini (on, effort 0.2)", lane="local",
-                               expect=dict(models=["inkling-2-mini"]), external=INKLING_2_MINI_LOAD),
+                               expect=dict(models=["inkling-2-mini"]), external=INKLING_2_MINI_E02_LOAD),
     # Codex: the stream's served model (response.completed -> response.model), checked against the requested id (a
     # dated snapshot of it allowed): the league stored the answer text only, so there is no league evidence.
     "gpt-6.1-sol-high": dict(setup="GPT-6.1 Sol (high)", lane="subscription",
@@ -239,7 +242,9 @@ AMENDMENTS = [
          note="First retry after the two stopped attempts: effort 0.2, temperature 0 and the same 32,768-token limit. "
               "Its first empty run is the validity check; if at most 20 of 200 answers are invalid, it plays the full "
               "schedule. This was chosen first because most capped answers were still reasoning normally, not "
-              "repeating at the end."),
+              "repeating at the end. On 24 Nov, after Logic's shared load was gone, Learning loaded one compatible "
+              "copy on its reserved GPU 2 from the same pinned revision, image and server arguments; no GPU 1 copy "
+              "was started and the GPU 3 small-model lane was not interrupted."),
     dict(at="2026-11-23", path="MODELS",
          added=["lfm2.5-24b-a2b-off"], gated=["lfm2.5-24b-a2b-off"],
          source="Ümit's decision of 23 Nov 2026",

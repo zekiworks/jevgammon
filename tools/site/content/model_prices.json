@@ -20,6 +20,15 @@
    "provisional": false,
    "provisional_reason": null
   },
+  "Claude Fable 5.2": {
+   "weights": "closed",
+   "input_per_mtok": 8,
+   "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+   "read": "2026-11-24",
+   "quote": "Claude Fable 5.2 | Base input tokens $8 / MTok",
+   "provisional": false,
+   "provisional_reason": null
+  },
   "Claude Opus 5.5": {
    "weights": "closed",
    "input_per_mtok": 4,
@@ -66,6 +75,24 @@
    "provisional": false,
    "provisional_reason": null
   },
+  "GPT-6.2 Astra": {
+   "weights": "closed",
+   "input_per_mtok": 8,
+   "source": "https://developers.openai.com/api/docs/pricing",
+   "read": "2026-11-24",
+   "quote": "Standard: gpt-6.2-astra | Short context input $8.00",
+   "provisional": false,
+   "provisional_reason": null
+  },
+  "GPT-6.2 Sol": {
+   "weights": "closed",
+   "input_per_mtok": 2,
+   "source": "https://developers.openai.com/api/docs/pricing",
+   "read": "2026-11-24",
+   "quote": "Standard: gpt-6.2-sol | Short context input $2.00",
+   "provisional": false,
+   "provisional_reason": null
+  },
   "GPT-6 Luna": {
    "weights": "closed",
    "input_per_mtok": 0.1,
@@ -101,6 +128,15 @@
    "read": "2026-11-10",
    "quote": "Gemini 4 Argon, Standard, Paid tier input price: '$2.00 through November 30, 2026. $4.00 starting December 1, 2026.'",
    "note": "Google's page gives '$2.00 through November 30, 2026. $4.00 starting December 1, 2026.' Ümit's ruling (#4399 JOB 7): the $2.00 is introductory and $4.00 is the standard price, so the class uses $4.00: Flagship.",
+   "provisional": false,
+   "provisional_reason": null
+  },
+  "Gemini 4 Neon": {
+   "weights": "closed",
+   "input_per_mtok": 3,
+   "source": "https://ai.google.dev/gemini-api/docs/pricing",
+   "read": "2026-11-24",
+   "quote": "Gemini 4 Neon, Standard, Paid tier input price: $3.00 per 1M tokens.",
    "provisional": false,
    "provisional_reason": null
   },

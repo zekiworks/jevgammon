@@ -74,6 +74,25 @@
    "card_source": null,
    "card_quote": null
   },
+  "Claude Fable 5.2": {
+   "total_b": null,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://www.anthropic.com/claude-fable-and-mythos-5-2",
+   "quote": "Searched the launch post, model overview and system card for 'parameter', 'billion', 'trillion' and figures like 'NB'/'NT'. No explicit parameter count was found.",
+   "checked": [
+    "https://www.anthropic.com/claude-fable-and-mythos-5-2",
+    "https://platform.claude.com/docs/en/about-claude/models/overview",
+    "https://www.anthropic.com/document/claude-fable-5-2-mythos-5-2-system-card"
+   ],
+   "read": "2026-11-24",
+   "note": "Closed API and subscription model; launch post and linked system card searched in full text.",
+   "card_total_b": null,
+   "card_active_b": null,
+   "card_source": null,
+   "card_quote": null
+  },
   "Claude Opus 5.5": {
    "total_b": null,
    "active_b": null,
@@ -391,6 +410,42 @@
    "card_source": null,
    "card_quote": null
   },
+  "GPT-6.2 Astra": {
+   "total_b": null,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://developers.openai.com/api/docs/models/gpt-6.2-astra",
+   "quote": "Searched the official model page for 'parameter', 'billion', 'trillion' and figures like 'NB'/'NT'. No explicit parameter count was found.",
+   "checked": [
+    "https://developers.openai.com/api/docs/models/gpt-6.2-astra",
+    "https://developers.openai.com/api/docs/pricing"
+   ],
+   "read": "2026-11-24",
+   "note": "Closed API and subscription model.",
+   "card_total_b": null,
+   "card_active_b": null,
+   "card_source": null,
+   "card_quote": null
+  },
+  "GPT-6.2 Sol": {
+   "total_b": null,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://developers.openai.com/api/docs/models/gpt-6.2-sol",
+   "quote": "Searched the official model page for 'parameter', 'billion', 'trillion' and figures like 'NB'/'NT'. No explicit parameter count was found.",
+   "checked": [
+    "https://developers.openai.com/api/docs/models/gpt-6.2-sol",
+    "https://developers.openai.com/api/docs/pricing"
+   ],
+   "read": "2026-11-24",
+   "note": "Closed API and subscription model.",
+   "card_total_b": null,
+   "card_active_b": null,
+   "card_source": null,
+   "card_quote": null
+  },
   "GPT-6 Luna": {
    "total_b": null,
    "active_b": null,
@@ -471,6 +526,25 @@
    ],
    "read": "2026-11-09",
    "note": "",
+   "card_total_b": null,
+   "card_active_b": null,
+   "card_source": null,
+   "card_quote": null
+  },
+  "Gemini 4 Neon": {
+   "total_b": null,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://deepmind.google/models/model-cards/gemini-4-neon/",
+   "quote": "Searched the model card and Gemini API model and pricing pages for 'parameter', 'billion', 'trillion' and figures like 'NB'/'NT'. No explicit parameter count was found.",
+   "checked": [
+    "https://deepmind.google/models/model-cards/gemini-4-neon/",
+    "https://ai.google.dev/gemini-api/docs/models/gemini-4-neon",
+    "https://ai.google.dev/gemini-api/docs/pricing"
+   ],
+   "read": "2026-11-24",
+   "note": "Closed API and subscription model; Google states Neon is adapted from Gemini 4 Carbon but discloses no parameter count.",
    "card_total_b": null,
    "card_active_b": null,
    "card_source": null,

@@ -16,34 +16,6 @@
    "status": "not started (waiting for budget)"
   },
   {
-   "setup": "GPT-6.2 Astra (high)",
-   "group": "chat",
-   "tag": "planned 23 Nov, no league record",
-   "params_model": null,
-   "status": "not started (waiting for quota reset and approval)"
-  },
-  {
-   "setup": "GPT-6.2 Sol (high)",
-   "group": "chat",
-   "tag": "planned 23 Nov, no league record",
-   "params_model": null,
-   "status": "not started (waiting for quota reset and approval)"
-  },
-  {
-   "setup": "Gemini 4 Neon (high)",
-   "group": "chat",
-   "tag": "planned 23 Nov, no league record",
-   "params_model": null,
-   "status": "not started (waiting for quota reset and approval)"
-  },
-  {
-   "setup": "Claude Fable 5.2 (high)",
-   "group": "chat",
-   "tag": "planned 23 Nov, no league record",
-   "params_model": null,
-   "status": "not started (waiting for quota reset and approval)"
-  },
-  {
    "setup": "REAX 1.3",
    "group": "decision",
    "tag": null,

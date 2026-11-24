@@ -134,6 +134,38 @@
     }
    ],
    "record": "Ümit #15121; loop split from stored capped responses; exploratory probe stored under workspace/improve/runs/inkling-2-mini-on/probe-effort-0.9-temp1.0; same-day Learning decision, improve harness amendment and planned-row estimates"
+  },
+  {
+   "at": "2026-11-24",
+   "source": "Ümit's subscription Learning decision of 24 Nov 2026",
+   "note": "Subscription successors moved from planned rows into the Learning roster: Gemini 4 Neon through Antigravity at thinking high; GPT-6.2 Astra and Sol through the ChatGPT/Codex route at reasoning high; Claude Fable 5.2 through the separate Claude subscription at adaptive-thinking effort high with a 32,768-token output limit. They use the same 50-game, 50-lesson and eight-test schedule. Subscription use is prioritized ahead of a new paid API route. Claude Opus 5.5 is not rerun because its existing Learning run is complete.",
+   "models": [
+    {
+     "setup": "Gemini 4 Neon (high)",
+     "maker": "Google",
+     "setting": "thinking high",
+     "route": "Google Antigravity subscription"
+    },
+    {
+     "setup": "GPT-6.2 Astra (high)",
+     "maker": "OpenAI",
+     "setting": "reasoning high",
+     "route": "ChatGPT subscription through Codex"
+    },
+    {
+     "setup": "GPT-6.2 Sol (high)",
+     "maker": "OpenAI",
+     "setting": "reasoning high",
+     "route": "ChatGPT subscription through Codex"
+    },
+    {
+     "setup": "Claude Fable 5.2 (high)",
+     "maker": "Anthropic",
+     "setting": "adaptive thinking, effort high; 32,768 output tokens",
+     "route": "separate Claude subscription"
+    }
+   ],
+   "record": "Hidden setup rows 115–118; improve harness amendment"
   }
  ]
 }

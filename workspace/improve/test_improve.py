@@ -830,9 +830,9 @@ class LFM25Off(unittest.TestCase):
         m = I.MODELS[self.KEY]
         self.assertEqual((m["lane"], m["expect"], m.get("billed")),
                          ("local", {"models": ["lfm2.5-24b-a2b"]}, None))
-        self.assertEqual(I.AMENDMENTS[-2]["added"], [self.KEY])
-        self.assertEqual(I.AMENDMENTS[-2]["gated"], [self.KEY])
-        self.assertIn("immediately after Qwen3.5-2B", I.AMENDMENTS[-2]["note"])
+        amendment = next(a for a in I.AMENDMENTS if a.get("added") == [self.KEY])
+        self.assertEqual(amendment["gated"], [self.KEY])
+        self.assertIn("immediately after Qwen3.5-2B", amendment["note"])
         s = I.league_settings("LFM2.5-24B-A2B (off)")
         self.assertEqual((s["spec"], s["base_url"], s["request"], s["max_tokens"], s["letter_readout"],
                           s["answer_prefix"]),
@@ -855,8 +855,8 @@ class SubscriptionSuccessors(unittest.TestCase):
     }
 
     def test_current_successors_use_the_preregistered_settings(self):
-        self.assertEqual(I.AMENDMENTS[-1]["added"], list(self.EXPECTED))
-        self.assertIn("Claude Opus 5.5 is not rerun", I.AMENDMENTS[-1]["note"])
+        amendment = next(a for a in I.AMENDMENTS if a.get("added") == list(self.EXPECTED))
+        self.assertIn("Claude Opus 5.5 is not rerun", amendment["note"])
         for key, (setup, provider, spec, reasoning, max_tokens) in self.EXPECTED.items():
             model = I.MODELS[key]
             settings = I.league_settings(setup)
@@ -866,6 +866,27 @@ class SubscriptionSuccessors(unittest.TestCase):
                              (provider, spec, reasoning, max_tokens, 4))
 
 
+
+
+class Qwen4Max(unittest.TestCase):
+    """Ümit #16378/#16380/#16384: run Qwen4 Max High E1 alone, then report actual cost before S1."""
+
+    def test_high_e1_uses_the_preregistered_alibaba_route(self):
+        key = "qwen4-max-high"
+        m = I.MODELS[key]
+        amendment = next(a for a in I.AMENDMENTS if a.get("added") == [key])
+        self.assertIn("Run E1 only", amendment["note"])
+        self.assertEqual((m["lane"], m["estimate"], m["E"], m["price"], m["expect"]),
+                         ("openrouter", 134.66, 10.0, (1.425, 0.07125, 4.275),
+                          {"models": ["qwen/qwen4-max", "qwen/qwen4-max-20261115"],
+                           "provider": "Alibaba"}))
+        settings = I.model_settings(key)
+        self.assertEqual((settings["spec"], settings["provider"], settings["reasoning"], settings["parallel"]),
+                         ("openai-compatible/qwen/qwen4-max", "openrouter:alibaba", "high", 4))
+        self.assertEqual(settings["request"]["provider"],
+                         {"order": ["alibaba"], "allow_fallbacks": False, "require_parameters": True})
+        settings["reasoning"] = "changed"
+        self.assertEqual(I.model_settings(key)["reasoning"], "high")
 class Inkling(Isolated):
     """Ümit #13780/#13810/#13811: Inkling 2 Mini on logic's shared load, which the lane neither starts, stops nor
     claims; before every step (and when a step's requests fail) the server must be the pinned load, else a pause."""
@@ -903,8 +924,8 @@ class Inkling(Isolated):
     def test_the_row_is_logics_load_greedy_at_effort_09_read_from_its_answer(self):
         m = self.saved["MODELS"][self.KEY]
         self.assertEqual((m["lane"], m["expect"], m.get("billed")), ("local", dict(models=["inkling-2-mini"]), None))
-        self.assertEqual(I.AMENDMENTS[-5]["added"], [self.KEY])
-        self.assertIn("#13810", I.AMENDMENTS[-5]["source"])
+        amendment = next(a for a in I.AMENDMENTS if a.get("added") == [self.KEY])
+        self.assertIn("#13810", amendment["source"])
         s = I.league_settings("Inkling 2 Mini (on)")  # v3.db player 112
         self.assertEqual((s["spec"], s["base_url"], s["max_tokens"], s["letter_readout"], s["top_logprobs"]),
                          ("openai-compatible/inkling-2-mini", "http://127.0.0.1:18712/v1", 32768, "answer", 20))
@@ -923,9 +944,9 @@ class Inkling(Isolated):
         """Ümit #14049/#14136: at 0.9 most E1 answers ran out of room; the rerun differs from 112 in its effort only."""
         on, e05 = self.saved["MODELS"][self.KEY], self.saved["MODELS"]["inkling-2-mini-e05"]
         self.assertEqual({k: v for k, v in e05.items() if k != "setup"}, {k: v for k, v in on.items() if k != "setup"})
-        self.assertEqual(I.AMENDMENTS[-4]["added"], ["inkling-2-mini-e05"])
-        self.assertEqual(I.AMENDMENTS[-4]["gated"], ["inkling-2-mini-e05"])
-        self.assertNotRegex(I.AMENDMENTS[-4]["note"], r"#\d")
+        amendment = next(a for a in I.AMENDMENTS if a.get("added") == ["inkling-2-mini-e05"])
+        self.assertEqual(amendment["gated"], ["inkling-2-mini-e05"])
+        self.assertNotRegex(amendment["note"], r"#\d")
         a, b = I.league_settings("Inkling 2 Mini (on)"), I.league_settings("Inkling 2 Mini (on, effort 0.5)")
         self.assertEqual(b["request"], dict(a["request"], chat_template_kwargs={"reasoning_effort": 0.5}))
         self.assertEqual((b["name"], b["reasoning"]), ("Inkling 2 Mini (on, effort 0.5)", "0.5"))
@@ -941,10 +962,10 @@ class Inkling(Isolated):
         self.assertEqual(e02["external"], I.INKLING_2_MINI_E02_LOAD)
         self.assertEqual(e02["external"]["receipt"],
                          "/home/cbasaran/.cache/learn-inkling/admit-e02/inkling-2-mini-e02-receipt.json")
-        self.assertEqual(I.AMENDMENTS[-3]["added"], ["inkling-2-mini-e02"])
-        self.assertEqual(I.AMENDMENTS[-3]["gated"], ["inkling-2-mini-e02"])
-        self.assertNotRegex(I.AMENDMENTS[-3]["note"], r"#\d")
-        self.assertIn("Learning loaded one compatible copy", I.AMENDMENTS[-3]["note"])
+        amendment = next(a for a in I.AMENDMENTS if a.get("added") == ["inkling-2-mini-e02"])
+        self.assertEqual(amendment["gated"], ["inkling-2-mini-e02"])
+        self.assertNotRegex(amendment["note"], r"#\d")
+        self.assertIn("Learning loaded one compatible copy", amendment["note"])
         a, b = I.league_settings("Inkling 2 Mini (on)"), I.league_settings("Inkling 2 Mini (on, effort 0.2)")
         self.assertEqual(b["request"], dict(a["request"], chat_template_kwargs={"reasoning_effort": 0.2}))
         self.assertEqual((b["name"], b["reasoning"]), ("Inkling 2 Mini (on, effort 0.2)", "0.2"))

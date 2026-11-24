@@ -27,6 +27,7 @@ E1 and S1: rule (a) (5 x S1 + 3 x E1 > 1.5 x estimate: stop).
 """
 
 import argparse
+import copy
 import fcntl
 import hashlib
 import json
@@ -194,6 +195,34 @@ MODELS = {
                                expect=dict(models=["gemini-4-neon"], model_pointer="/response/modelVersion")),
     "claude-fable-5.2-high": dict(setup="Claude Fable 5.2 (high)", lane="subscription", quota_pause=True,
                                   expect=dict(models=["claude-fable-5-2"])),
+    "qwen4-max-high": dict(
+        setup="Qwen4 Max (high)",
+        lane="openrouter",
+        billed=True,
+        estimate=134.66,
+        S=20.93,
+        E=10.00,
+        price=(1.425, 0.07125, 4.275),
+        expect=dict(models=["qwen/qwen4-max", "qwen/qwen4-max-20261115"], provider="Alibaba"),
+        settings=dict(
+            name="Qwen4 Max (high)",
+            spec="openai-compatible/qwen/qwen4-max",
+            provider="openrouter:alibaba",
+            base_url="https://openrouter.ai/api/v1",
+            api_key_env="OPENROUTER_API_KEY",
+            reasoning="high",
+            request=dict(
+                provider=dict(order=["alibaba"], allow_fallbacks=False, require_parameters=True),
+                usage=dict(include=True),
+            ),
+            top_logprobs=5,
+            letter_readout="answer",
+            price=dict(input_per_mtok=1.425, output_per_mtok=4.275),
+            note="Alibaba's sole OpenRouter endpoint, fallbacks off; reasoning high; maker defaults otherwise.",
+            parallel=4,
+            rpm=18,
+        ),
+    ),
 }
 
 # Dated amendments to the roster (plan §3), recorded here and on the page; the plan's text is unchanged (its sha256 is
@@ -261,6 +290,10 @@ AMENDMENTS = [
               "at reasoning high; Claude Fable 5.2 uses the separate Claude subscription at adaptive-thinking effort "
               "high with a 32,768-token output limit. Subscription use is prioritized ahead of a new paid API route. "
               "Claude Opus 5.5 is not rerun: its existing Learning run is already complete."),
+    dict(at="2026-11-24", path="MODELS", added=["qwen4-max-high"], source="Ümit #16378/#16380/#16384",
+         note="Focused newest-model cohort starts one paid model at a time. Qwen4 Max runs first at reasoning high, "
+              "maker defaults otherwise, pinned to Alibaba's OpenRouter endpoint with fallbacks off. Run E1 only, "
+              "report its actual billed cost, then project the remaining schedule before S1."),
 ]
 
 # The 2026-11-20 amendment's validity check (Ümit #13295): a gated model whose E1 has more than this share of invalid
@@ -372,6 +405,12 @@ def league_settings(setup: str) -> dict:
     return json.loads(row[0])
 
 
+def model_settings(key: str) -> dict:
+    """A Learning-only setup may carry its preregistered settings until it has a league row."""
+    m = MODELS[key]
+    return copy.deepcopy(m["settings"]) if "settings" in m else league_settings(m["setup"])
+
+
 def has_setup(setup: str) -> bool:
     """Whether the setup's settings are in v3.db (an amended row is listed before its settings exist; `run` refuses it)."""
     db = sqlite3.connect(f"file:{V3_DB}?mode=ro", uri=True, timeout=60)
@@ -384,7 +423,7 @@ def has_setup(setup: str) -> bool:
 def player_config(key, name, parallel, note_file=None, ledger=None, base_url=None) -> dict:
     """The leaderboard setup's settings, unchanged except name, parallel, prompt_note_file, budget, base_url."""
     m = MODELS[key]
-    p = league_settings(m["setup"])
+    p = model_settings(key)
     if DRY:
         p = dict(name=name, spec="safest", note="dry run: the safest program in the model's seat")
     p.update(name=name, parallel=parallel)
@@ -596,7 +635,7 @@ NO_FIT = "LESSONS DON'T FIT:"
 
 def tokenized(key, body, fetch=None):
     """(prompt tokens, max_model_len) of a chat request on the model's own vLLM server (POST /tokenize)."""
-    url = (base_url_of(key) or league_settings(MODELS[key]["setup"])["base_url"]).rsplit("/v1", 1)[0] + "/tokenize"
+    url = (base_url_of(key) or model_settings(key)["base_url"]).rsplit("/v1", 1)[0] + "/tokenize"
     fetch = fetch or (lambda u, b: urllib.request.urlopen(urllib.request.Request(
         u, data=json.dumps(b).encode(), headers={"Content-Type": "application/json"}), timeout=60).read().decode())
     r = json.loads(fetch(url, body))
@@ -632,7 +671,7 @@ def context_fit(key, what, messages, play, fetch=None):
     (vLLM refuses, never cuts, a prompt that does not fit)."""
     if DRY or MODELS[key]["lane"] != "local":
         return None
-    settings = league_settings(MODELS[key]["setup"])
+    settings = model_settings(key)
     request = settings.get("request") or {}
     body = dict(model=settings["spec"].split("/", 1)[1], messages=messages,
                 chat_template_kwargs=request.get("chat_template_kwargs"), add_generation_prompt=True)
@@ -792,7 +831,7 @@ def ensure_runner_db(key):
 
 def vllm_load(key):
     """Running and waiting requests of a local vLLM server (/metrics), or None."""
-    url = base_url_of(key) or (league_settings(MODELS[key]["setup"]).get("base_url") if not DRY else None)
+    url = base_url_of(key) or (model_settings(key).get("base_url") if not DRY else None)
     if MODELS[key]["lane"] != "local" or not url or DRY:
         return None
     try:
@@ -812,7 +851,7 @@ def fit_check(key, fetch=None):
     """Local servers (plan §10): the KV cache must hold at least 4 sequences at the full max-model-len (the tests'
     4 in flight). Reads /v1/models (max_model_len) and /metrics (vllm:cache_config_info num_gpu_blocks, block_size).
     Returns the record; raises SystemExit (the run does not start) on a shortfall or an unreadable server."""
-    url = base_url_of(key) or league_settings(MODELS[key]["setup"]).get("base_url")
+    url = base_url_of(key) or model_settings(key).get("base_url")
     fetch = fetch or (lambda u: urllib.request.urlopen(u, timeout=20).read().decode())
     try:
         models = json.loads(fetch(f"{url}/models"))["data"]
@@ -843,7 +882,7 @@ def external_state(key, fetch=None, inspect=None):
     the pinned repo, revision, image and served name; GET /v1/models lists the served name with the pinned repo and
     context; the owner's container runs, from the receipt's image with the receipt's arguments (`docker inspect`)."""
     x = MODELS[key]["external"]
-    url = base_url_of(key) or league_settings(MODELS[key]["setup"])["base_url"]
+    url = base_url_of(key) or model_settings(key)["base_url"]
     fetch = fetch or (lambda u: urllib.request.urlopen(u, timeout=20).read().decode())
     inspect = inspect or (lambda c: subprocess.run(["docker", "inspect", c], capture_output=True, text=True,
                                                    timeout=60).stdout)
@@ -1496,7 +1535,7 @@ def settings_check(key):
     commit = bin_commit()
     if commit in PIN_READS:
         parity_check(commit)
-    unread = sorted(set(league_settings(MODELS[key]["setup"])) & set(RUNNER_UNREAD) - set(PIN_READS.get(commit, ())))
+    unread = sorted(set(model_settings(key)) & set(RUNNER_UNREAD) - set(PIN_READS.get(commit, ())))
     if unread:
         raise SystemExit(f"{key}: {MODELS[key]['setup']} sets {', '.join(unread)}, which the pinned runner {BIN.name} "
                          f"does not read: refused")
@@ -1754,7 +1793,7 @@ def model_summary(key):
                            lesson_calls=a["lesson_calls"], lessons_cut=a["lessons_cut"],
                            lessons_empty=a["lessons_empty"], restarts=a["restarts"], lessons=a["lessons"],
                            t10={k: a["t10"][k] for k in TEST_KEYS}))
-    settings = {} if DRY or not has_setup(m["setup"]) else league_settings(m["setup"])
+    settings = {} if DRY or ("settings" not in m and not has_setup(m["setup"])) else model_settings(key)
     route = settings.get("provider") or m["lane"]
     # The runner pins its steps ran on (step_start's binary), in order of first use: the page can show each row's pin.
     runner = []

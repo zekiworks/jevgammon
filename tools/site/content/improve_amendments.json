@@ -133,7 +133,7 @@
      "route": "local vLLM on our GPU"
     }
    ],
-   "record": "Ümit #15121/#15388; loop split from stored capped responses; exploratory probe stored under workspace/improve/runs/inkling-2-mini-on/probe-effort-0.9-temp1.0; owner receipt /home/cbasaran/.cache/learn-inkling/admit-e02/inkling-2-mini-e02-receipt.json; improve harness amendment and planned-row estimates"
+   "record": "Ümit #15121/#15388; loop split from stored capped responses; exploratory probe stored under workspace/improve/runs/inkling-2-mini-on/probe-effort-0.9-temp1.0; owner receipt inkling-2-mini-e02-receipt.json; improve harness amendment and planned-row estimates"
   },
   {
    "at": "2026-11-24",

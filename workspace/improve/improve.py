@@ -1347,7 +1347,7 @@ def next_step(key):
 # --- Route check (OpenRouter) ----------------------------------------------------------------------------------
 
 def response_ids(key, step):
-    """(model, provider) of every stored OpenRouter response of a step: games, tests and lesson calls."""
+    """(model, provider) of every stored response identity of a step: games, tests and lesson calls."""
     out = []
     d = step_dir(key, step)
     names = [test_name(key, step)] if step.startswith("E") else []
@@ -1356,24 +1356,41 @@ def response_ids(key, step):
             names += [game_name(key, series_of(step), a), test_name(key, step, a)]
     if db_path(key).exists():
         db = sqlite3.connect(f"file:{db_path(key)}?mode=ro", uri=True, timeout=60)
-        q = ["SELECT x.response FROM answer_exchanges x JOIN answers a ON a.id = x.answer_id WHERE a.setup = ?",
-             "SELECT x.response FROM exchanges x JOIN turns t ON t.id = x.turn_id JOIN games g ON g.id = t.game_id "
-             "JOIN matches m ON m.id = g.match_id WHERE m.model1 = ? AND t.player = 1"]
+        q = [
+            ("SELECT x.identity, x.response FROM answer_exchanges x JOIN answers a ON a.id = x.answer_id "
+             "WHERE a.setup = ?",
+             "SELECT NULL, x.response FROM answer_exchanges x JOIN answers a ON a.id = x.answer_id "
+             "WHERE a.setup = ?"),
+            ("SELECT x.identity, x.response FROM exchanges x JOIN turns t ON t.id = x.turn_id "
+             "JOIN games g ON g.id = t.game_id JOIN matches m ON m.id = g.match_id "
+             "WHERE m.model1 = ? AND t.player = 1",
+             "SELECT NULL, x.response FROM exchanges x JOIN turns t ON t.id = x.turn_id "
+             "JOIN games g ON g.id = t.game_id JOIN matches m ON m.id = g.match_id "
+             "WHERE m.model1 = ? AND t.player = 1"),
+        ]
         for name in names:
-            for sql in q:
+            for with_identity, legacy in q:
                 try:
-                    out += [r[0] for r in db.execute(sql, (name,))]
+                    out += list(db.execute(with_identity, (name,)))
                 except sqlite3.OperationalError:
-                    pass
+                    try:
+                        out += list(db.execute(legacy, (name,)))
+                    except sqlite3.OperationalError:
+                        pass
         db.close()
     for f in d.rglob("lessons-g*.call.json"):
-        out += [x.get("response") for x in json.loads(f.read_text()).get("exchanges", [])]
+        out += [(x.get("identity"), x.get("response"))
+                for x in json.loads(f.read_text()).get("exchanges", [])]
     exp = MODELS[key].get("expect") or {}
     ids = []
-    for raw in out:
+    for identity, raw in out:
         try:
+            if identity is not None:
+                fields = json.loads(identity).get("fields", {})
+                ids.append((fields.get("model"), fields.get("provider") if exp.get("provider") else None))
+                continue
             v = json.loads(raw)
-        except (TypeError, ValueError):
+        except (AttributeError, TypeError, ValueError):
             ids.append((None, None))  # unreadable identity fails the check
             continue
         ids.append((pointer(v, exp.get("model_pointer") or "/model"),

@@ -480,6 +480,21 @@ class Money(Isolated):
         self.assertIn("fails closed", I.route_check("deepseek-v4.1-flash-on", []))  # no evidence
         self.assertIn("route check", I.route_check("deepseek-v4.1-flash-on", [(None, None)]))
 
+    def test_response_ids_uses_the_runners_checked_codex_identity(self):
+        key, step = "gpt-6.2-astra-high", "E1"
+        path = I.db_path(key)
+        path.parent.mkdir(parents=True)
+        db = sqlite3.connect(path)
+        db.execute("CREATE TABLE answers (id INTEGER PRIMARY KEY, setup TEXT)")
+        db.execute("CREATE TABLE answer_exchanges (answer_id INTEGER, response TEXT, identity TEXT)")
+        db.execute("INSERT INTO answers (id, setup) VALUES (1, ?)", (I.test_name(key, step),))
+        checked = json.dumps({"result": "exact",
+                              "fields": {"model": "gpt-6.2-astra", "provider": None}})
+        db.execute("INSERT INTO answer_exchanges VALUES (1, ?, ?)", ("B", checked))
+        db.commit()
+        db.close()
+        self.assertEqual(I.response_ids(key, step), [("gpt-6.2-astra", None)])
+
     def test_billed_players_carry_the_route_guard(self):
         p = I.player_config("deepseek-v4.1-flash-on", "n", 1)
         self.assertEqual(p["expect_route"]["models"][0], "deepseek/deepseek-v4.1-flash")

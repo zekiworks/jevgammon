@@ -610,6 +610,19 @@ def others(L) -> str:
             + f'<div class="tab-rule">{spec_markdown(pr["markdown"])}</div>')
 
 
+def amendment_notes(amendments) -> str:
+    """Dated amendments as notes; a second decision on one date keeps the first note's stable anchor."""
+    counts = {}
+    out = []
+    for a in amendments:
+        at = a["at"]
+        counts[at] = counts.get(at, 0) + 1
+        suffix = "" if counts[at] == 1 else f"-{counts[at]}"
+        out.append(f'<p class="note" id="improve-amendment-{esc(at)}{suffix}">'
+                   f'{esc(a["note"])} ({esc(a["source"])}.)</p>')
+    return "".join(out)
+
+
 def models_section(L) -> str:
     plan = L["plan"]
     results = not L["preregistration_only"] and L["results"] is not None
@@ -622,8 +635,7 @@ def models_section(L) -> str:
     else:
         head = ["Model (v3.db setup)", "Maker", "Setting", "Route", "Status in the plan (8 Nov)", "Improved?"]
         cap = f'{count(len(plan["models"]))} chat models (in scope), in the plan\'s order'
-    amend = "".join(f'<p class="note" id="improve-amendment-{esc(a["at"])}">{esc(a["note"])} ({esc(a["source"])}.)</p>'
-                    for a in plan["amendments"])
+    amend = amendment_notes(plan["amendments"])
     body = amend + P.SWIPE + P.table(head, [model_row(pm, m, results) for pm, m in rows(L)], esc(cap),
                              cls="board list improve-models")
     seed = (f'<p class="note" id="improve-seed"><strong>{esc(plan["seed_line"])}</strong></p>'

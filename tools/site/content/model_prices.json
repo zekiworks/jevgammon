@@ -131,6 +131,16 @@
    "provisional": false,
    "provisional_reason": null
   },
+  "Gemini 4 Carbon": {
+   "weights": "closed",
+   "input_per_mtok": 4,
+   "source": "https://ai.google.dev/gemini-api/docs/pricing",
+   "read": "2026-11-24",
+   "quote": "Gemini 4 Carbon, Standard, Paid tier input price: '$2.00 through November 30, 2026. $4.00 starting December 1, 2026.'",
+   "note": "The Learning run uses the Antigravity subscription. The class uses Google's regular $4.00 price, not the introductory $2.00 price.",
+   "provisional": false,
+   "provisional_reason": null
+  },
   "Gemini 4 Neon": {
    "weights": "closed",
    "input_per_mtok": 3,

@@ -169,6 +169,20 @@
   },
   {
    "at": "2026-11-24",
+   "source": "Ümit's Gemini 4 Carbon Learning clarification of 24 Nov 2026",
+   "note": "Gemini 4 Carbon, not Argon, is added to the subscription Learning roster at thinking high. It runs after Gemini 4 Neon without interrupting Neon, under the same 50-game, 50-lesson and eight-test schedule. Its existing Antigravity smoke reply identifies itself as gemini-4-carbon. The subscription route is used; no paid API route is used.",
+   "models": [
+    {
+     "setup": "Gemini 4 Carbon (high)",
+     "maker": "Google",
+     "setting": "thinking high",
+     "route": "Google Antigravity subscription, after Gemini 4 Neon"
+    }
+   ],
+   "record": "Ümit #16426; stored route smoke response identity gemini-4-carbon; improve harness amendment"
+  },
+  {
+   "at": "2026-11-24",
    "source": "Ümit's focused newest-model Learning decision of 24 Nov 2026",
    "note": "Recorded before any focused-cohort call. Run every High setup before any Low setup. The original 20-model Agent Arena screenshot cohort was reduced for cost: Qwen4 Max was added; MiMo-V2.6-Pro, MiniMax-M3.1-Flash and Inkling 2 Small were removed; Kimi K3.1 Pro was restored. Qwen4 Max High runs first after spending approval. Literal high and low are used where the model supports them; Qwen3.8 Flash Next uses thinking on then off. Maker-recommended sampling remains in each mode. DeepSeek V4.1 Flash 1017 reuses our local checkpoint at $0 billed. The three currently routable paid High setups have a $415.07 conservative planning envelope at 5,000 input and 10,000 output tokens per request across about 2,700 requests each; at 2,000 and 4,000 output tokens per request their estimates are $105.64 and $183.00. Qwen4 Max alone is $134.66 under the conservative envelope. Qwen3.8 Flash Next is also local and GLM-5.4 has no configured route. The existing cap has $31.86 left; no paid call starts without John's spending approval.",
    "models": [

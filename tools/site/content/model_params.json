@@ -566,6 +566,25 @@
    "card_source": null,
    "card_quote": null
   },
+  "Gemini 4 Carbon": {
+   "total_b": null,
+   "active_b": null,
+   "effective_b": null,
+   "moe": false,
+   "source": "https://deepmind.google/models/model-cards/gemini-4-carbon/",
+   "quote": "Searched the model card and Gemini API model and pricing pages for 'parameter', 'billion', 'trillion' and figures like 'NB'/'NT'. No explicit parameter count was found.",
+   "checked": [
+    "https://deepmind.google/models/model-cards/gemini-4-carbon/",
+    "https://ai.google.dev/gemini-api/docs/models/gemini-4-carbon",
+    "https://ai.google.dev/gemini-api/docs/pricing"
+   ],
+   "read": "2026-11-24",
+   "note": "Closed API and subscription model.",
+   "card_total_b": null,
+   "card_active_b": null,
+   "card_source": null,
+   "card_quote": null
+  },
   "Gemini 4 Neon": {
    "total_b": null,
    "active_b": null,

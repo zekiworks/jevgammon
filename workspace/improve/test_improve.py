@@ -886,9 +886,9 @@ class Qwen4Max(unittest.TestCase):
         key = "qwen4-max-high"
         m = I.MODELS[key]
         amendment = next(a for a in I.AMENDMENTS if a.get("added") == [key])
-        self.assertIn("Run E1 only", amendment["note"])
-        self.assertEqual((m["lane"], m["estimate"], m["E"], m["price"], m["expect"]),
-                         ("openrouter", 134.66, 10.0, (1.425, 0.07125, 4.275),
+        self.assertIn("Stop after S1", amendment["note"])
+        self.assertEqual((m["lane"], m["estimate"], m["S"], m["E"], m["price"], m["expect"]),
+                         ("openrouter", 134.66, 17.88, 10.0, (1.425, 0.07125, 4.275),
                           {"models": ["qwen/qwen4-max", "qwen/qwen4-max-20261115"],
                            "provider": "Alibaba"}))
         settings = I.model_settings(key)

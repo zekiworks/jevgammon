@@ -215,7 +215,7 @@ MODELS = {
         lane="openrouter",
         billed=True,
         estimate=134.66,
-        S=20.93,
+        S=17.88,
         E=10.00,
         price=(1.425, 0.07125, 4.275),
         expect=dict(models=["qwen/qwen4-max", "qwen/qwen4-max-20261115"], provider="Alibaba"),
@@ -309,10 +309,14 @@ AMENDMENTS = [
          note="Added: Gemini 4 Carbon through the Antigravity subscription at thinking high, under the same rule, "
               "prompt, test and schedule. It runs after Gemini 4 Neon without interrupting Neon. The stored route "
               "smoke reply identifies itself as gemini-4-carbon; no paid API route is used."),
-    dict(at="2026-11-24", path="MODELS", added=["qwen4-max-high"], source="Ümit #16378/#16380/#16384",
+    dict(at="2026-11-24", path="MODELS", added=["qwen4-max-high"],
+         source="Ümit #16378/#16380/#16384; Can #16568",
          note="Focused newest-model cohort starts one paid model at a time. Qwen4 Max runs first at reasoning high, "
-              "maker defaults otherwise, pinned to Alibaba's OpenRouter endpoint with fallbacks off. Run E1 only, "
-              "report its actual billed cost, then project the remaining schedule before S1."),
+              "maker defaults otherwise, pinned to Alibaba's OpenRouter endpoint with fallbacks off. E1 ran alone "
+              "and billed $8.545099 for 200 of 200 answers. Before S1, its expected series cost was revised from the "
+              "preregistered $20.93 to $17.88 in proportion to actual E1 versus its $10 estimate. Can approved S1 "
+              "only; its ledger remains hard-limited by the unchanged experiment share, preserving the decision-model "
+              "reserve. Stop after S1 and report actual cost before S2."),
 ]
 
 # The 2026-11-20 amendment's validity check (Ümit #13295): a gated model whose E1 has more than this share of invalid

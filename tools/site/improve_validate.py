@@ -407,7 +407,7 @@ PLANNED_ROW = DICT(dict(setup=MODEL[1]["setup"], group=("enum", PLANNED_GROUPS),
                         params_model=OPT(MODEL[1]["setup"])),
                    dict(status=("enum", PLANNED_STATUSES), notes=("enum", PLANNED_STATUSES),
                         worst_mistakes=("enum", PLANNED_STATUSES)))
-PLANNED = DICT(dict(about=("str", r"[^<>\x00-\x1f]{1,2000}"), rows=LIST(PLANNED_ROW, 40)))
+PLANNED = DICT(dict(about=("str", r"[^<>\x00-\x1f]{1,5000}"), rows=LIST(PLANNED_ROW, 80)))
 
 
 def planned_problems(doc, plan_setups: set, params: dict) -> list:

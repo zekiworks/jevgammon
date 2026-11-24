@@ -200,6 +200,11 @@
    "name": "SmolLM",
    "icon": "fi-smollm",
    "match": "^(?:SmolLM)"
+  },
+  {
+   "name": "Hy",
+   "icon": "fi-gemini",
+   "match": "^(?:Hy4|HY3)"
   }
  ]
 }

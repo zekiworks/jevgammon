@@ -1245,6 +1245,8 @@ def class_note(model: str) -> str | None:
                 'used on every question.')
     if model in PRICES:
         head = "Closed" if PRICES[model]["weights"] == "closed" else "Open, size not stated by the maker"
+        if PRICES[model]["input_per_mtok"] is None:
+            return f'{head} · {CLASS_LABEL["undisclosed"]} (maker lists neither an exact total nor a token price){ours}.'
         kind = "introductory price, the only one published" if PRICES[model]["provisional"] else "standard list price"
         price = f'${PRICES[model]["input_per_mtok"]:g} per 1M input tokens, {kind}'
         prov = (f'; class provisional: {PRICES[model]["provisional_reason"].rstrip(".")}'

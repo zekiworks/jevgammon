@@ -389,6 +389,41 @@
    "card_quote": "Neither the card, blog nor docs state a parameter count (our checkpoint count 753.33B is not the maker's figure).",
    "class_from_files": "The maker's model card states no total; 753.33B is counted from the released files (Hugging Face's file total agrees)."
   },
+  "GLM-5.4": {
+   "total_b": null,
+   "active_b": null,
+   "effective_b": null,
+   "moe": true,
+   "source": "https://z.ai/blog/glm-5.4",
+   "quote": "The maker describes GLM-5.4 as a loop transformer operating at 750B scale; the launch post does not state an exact total or active parameter count.",
+   "checked": [
+    "https://z.ai/blog/glm-5.4"
+   ],
+   "read": "2026-11-24",
+   "note": "Closed API model at preregistration. '750B scale' is not treated as an exact total parameter count.",
+   "card_total_b": null,
+   "card_active_b": null,
+   "card_source": "https://z.ai/blog/glm-5.4",
+   "card_quote": "Maker's launch post: 750B scale; no exact total or active count."
+  },
+  "Hy4": {
+   "total_b": 770,
+   "active_b": 49,
+   "effective_b": null,
+   "moe": true,
+   "source": "https://huggingface.co/tencent/Hy4/blob/main/README.md",
+   "quote": "Maker card: 'The language backbone comprises 770B total parameters, of which 49B are activated per token'; model specification excludes the ViT, adapter and 3.3B DFly2 drafter from that total.",
+   "checked": [
+    "https://huggingface.co/tencent/Hy4/raw/main/README.md"
+   ],
+   "read": "2026-11-24",
+   "note": "Maker-stated language-backbone count. The separate 1.23B ViT, adapter and 3.3B speculative drafter are outside the stated 770B total.",
+   "terms": "770B language backbone; 49B text active; excludes ViT, adapter and DFly2 drafter",
+   "card_total_b": 770,
+   "card_active_b": 49,
+   "card_source": "https://huggingface.co/tencent/Hy4",
+   "card_quote": "Card: 'Total Parameters (excluding ViT, adapter, and DFly2) | 770B'; 'Activated Parameters per Token | Text 49B + Vision 1.23B'."
+  },
   "GPT-6 Astra": {
    "total_b": null,
    "active_b": null,
@@ -1407,6 +1442,42 @@
    "card_active_b": null,
    "card_source": null,
    "card_quote": null
+  },
+  "Qwen3.8 Flash Next": {
+   "total_b": 176,
+   "active_b": 6,
+   "effective_b": null,
+   "moe": true,
+   "source": "https://github.com/QwenLM/Qwen3.8-Flash-Next/blob/main/README.md",
+   "quote": "Maker README: 'a 125B-parameter main model, supplemented by an additional 51B N-gram embeddings, with 6B parameters activated per token.'",
+   "checked": [
+    "https://raw.githubusercontent.com/QwenLM/Qwen3.8-Flash-Next/main/README.md"
+   ],
+   "read": "2026-11-24",
+   "note": "Logical scope is the 125B main model plus the separate 51B N-gram embedding table named by the maker.",
+   "terms": "125B main model + 51B N-gram embeddings; 6B active",
+   "card_total_b": 125,
+   "card_active_b": 6,
+   "card_source": "https://github.com/QwenLM/Qwen3.8-Flash-Next",
+   "card_quote": "README: '125B-parameter main model, supplemented by an additional 51B N-gram embeddings, with 6B parameters activated per token.'"
+  },
+  "Qwen4 Max": {
+   "total_b": 2400,
+   "active_b": 71,
+   "effective_b": null,
+   "moe": true,
+   "source": "https://qwen.ai/blog?id=qwen4-max",
+   "quote": "Maker launch post states a 2.4T-parameter backbone, 71B parameters activated per token and an additional 328B N-gram embedding table.",
+   "checked": [
+    "https://qwen.ai/blog?id=qwen4-max"
+   ],
+   "read": "2026-11-24",
+   "note": "The displayed total is the maker's 2.4T backbone figure; the separate 328B N-gram embedding table is retained in the scope text.",
+   "terms": "2.4T backbone + 328B N-gram embeddings; 71B active",
+   "card_total_b": 2400,
+   "card_active_b": 71,
+   "card_source": "https://qwen.ai/blog?id=qwen4-max",
+   "card_quote": "Launch post: 2.4T backbone parameters, 71B active per token and 328B additional N-gram embedding parameters."
   },
   "Qwen3.8-27B": {
    "total_b": 27.78,

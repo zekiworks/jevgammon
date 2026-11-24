@@ -263,6 +263,16 @@
    "provisional": false,
    "provisional_reason": null
   },
+  "GLM-5.4": {
+   "weights": "closed",
+   "input_per_mtok": null,
+   "source": "https://docs.z.ai/guides/overview/pricing",
+   "read": "2026-11-24",
+   "quote": "The maker's current pricing table lists GLM-5.3, GLM-5.3-Flash and GLM-5.3-FlashX, but no GLM-5.4 price.",
+   "note": "No configured route or maker list price at preregistration; never estimated from another GLM model.",
+   "provisional": false,
+   "provisional_reason": null
+  },
   "SubQ Savant 1.4": {
    "weights": "closed",
    "input_per_mtok": 0.1,

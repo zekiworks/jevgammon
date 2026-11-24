@@ -1,34 +1,6 @@
 {
- "about": "Planned rows of the Did they improve? page (Ümit/Zeki #3710): models and setups not yet run, status only, no numbers. Not the pre-registration and not results. Second chat group: Ümit #3629. GLM-5.4: Ümit's Learning decision of 24 Nov 2026 records High first and Low second under the same protocol and the maker's recommended sampling for each mode, before either call; both wait for a Z.ai/BigModel route or login. Decision models: the 10-model cohort of the decision-model addendum of 2026-11-09 (section 3, sha256 b370f4dc9660a618aece4586b8c8f5259688372fab580305b4454aaa2d71a967), each with its status before preflight; Cygnet: not tested (#3111). Arms 'notes' (helper-written notes) and 'worst mistakes'. params_model: the model's name in model_params.json (Small models filter), null when not listed.",
+ "about": "Planned rows of the Did they improve? page (Ümit/Zeki #3710): models and setups not yet run, status only, no numbers. Not the pre-registration and not results. The focused newest-model Learning cohort is recorded in the dated 24 Nov amendment instead of duplicated here. Decision models: the 10-model cohort of the decision-model addendum of 2026-11-09 (section 3, sha256 b370f4dc9660a618aece4586b8c8f5259688372fab580305b4454aaa2d71a967), each with its status before preflight; Cygnet: not tested (#3111). Arms 'notes' (helper-written notes) and 'worst mistakes'. params_model: the model's name in model_params.json (Small models filter), null when not listed.",
  "rows": [
-  {
-   "setup": "MiniMax-M3.1-Flash",
-   "group": "chat",
-   "tag": "added 9 Nov, no league record",
-   "params_model": "MiniMax-M3.1-Flash",
-   "status": "not started (waiting for budget)"
-  },
-  {
-   "setup": "GLM-5.4 (high)",
-   "group": "chat",
-   "tag": "planned 24 Nov, no league record",
-   "params_model": null,
-   "status": "not started (waiting for Z.ai/BigModel route or login)"
-  },
-  {
-   "setup": "GLM-5.4 (low)",
-   "group": "chat",
-   "tag": "planned 24 Nov, no league record",
-   "params_model": null,
-   "status": "not started (waiting for Z.ai/BigModel route or login)"
-  },
-  {
-   "setup": "Inkling Small",
-   "group": "chat",
-   "tag": "added 9 Nov, no league record",
-   "params_model": "Inkling Small",
-   "status": "not started (waiting for budget)"
-  },
   {
    "setup": "REAX 1.3",
    "group": "decision",

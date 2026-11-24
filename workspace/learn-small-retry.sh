@@ -5,7 +5,14 @@ set -u
 M="minicpm5-2b-on qwen3.5-2b-on lfm2.5-24b-a2b-off gemma-4-e2b-on raon-1-nano-on smollm3-3b-off smollm3-3b-on"
 cd /home/cbasaran/code/jevgammon-improve
 while :; do
-  left=$(timeout 120 python3 workspace/improve/improve.py status 2>/dev/null | grep -E "^($(echo $M | tr ' ' '|')):" | grep -v -E ": complete|operator hold|stopped" | wc -l)
+  left=0
+  status_failed=0
+  for model in $M; do
+    status=$(timeout 180 python3 workspace/improve/improve.py status --model "$model" 2>/dev/null) ||
+      { status_failed=1; break; }
+    grep -Eq ': complete|operator hold|stopped' <<<"$status" || left=$((left + 1))
+  done
+  if [ "$status_failed" = 1 ]; then sleep 60; continue; fi
   [ "$left" = 0 ] && { echo "all done $(date -u +%T)"; break; }
   if ! systemctl --user is-active -q improve-local-small; then
     systemctl --user reset-failed improve-local-small improve-xid-watch-small 2>/dev/null

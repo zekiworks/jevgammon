@@ -9,6 +9,20 @@
    "status": "not started (waiting for budget)"
   },
   {
+   "setup": "GLM-5.4 (high)",
+   "group": "chat",
+   "tag": "planned 24 Nov, no league record",
+   "params_model": null,
+   "status": "not started (waiting for Z.ai/BigModel route or login)"
+  },
+  {
+   "setup": "GLM-5.4 (low)",
+   "group": "chat",
+   "tag": "planned 24 Nov, no league record",
+   "params_model": null,
+   "status": "not started (waiting for Z.ai/BigModel route or login)"
+  },
+  {
    "setup": "Inkling Small",
    "group": "chat",
    "tag": "added 9 Nov, no league record",

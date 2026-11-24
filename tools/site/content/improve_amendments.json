@@ -166,6 +166,26 @@
     }
    ],
    "record": "Hidden setup rows 115–118; improve harness amendment"
+  },
+  {
+   "at": "2026-11-24",
+   "source": "Ümit's GLM-5.4 Learning decision of 24 Nov 2026",
+   "note": "GLM-5.4 is planned in both reasoning modes before either model call: High first, then Low, each under the same rule, prompt, 50-game and 50-lesson schedule, and eight tests. The earlier single-Low recommendation is superseded because the current successor comparison uses high reasoning; Low remains as a separately labelled second setup. Each setup starts with E1. Neither starts until a Z.ai/BigModel route or login is configured; there is no paid-API fallback and no call has been made.",
+   "models": [
+    {
+     "setup": "GLM-5.4 (high)",
+     "maker": "Z.ai",
+     "setting": "reasoning high; first",
+     "route": "Z.ai/BigModel; route or login not configured"
+    },
+    {
+     "setup": "GLM-5.4 (low)",
+     "maker": "Z.ai",
+     "setting": "reasoning low; second",
+     "route": "Z.ai/BigModel; route or login not configured"
+    }
+   ],
+   "record": "Learning decision and planned rows; recorded before either model call"
   }
  ]
 }

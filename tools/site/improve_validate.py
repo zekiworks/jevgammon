@@ -395,12 +395,13 @@ def validate(R, plan_sha: str, prompt_sha: str, test_sha: str, harness_prompt_sh
 # Decision rows: the decision-model addendum's cohort (2026-11-09, section 3) and its status before preflight.
 PLANNED_STATUSES = ("not started (waiting for budget)", "not started",
                     "not started (waiting for quota reset and approval)",
+                    "not started (waiting for Z.ai/BigModel route or login)",
                     "not started (waiting for a GPU; local render check pending)",
                     "not started (waiting for D5 and a GPU; local render check pending)",
                     "not started: no backgammon route yet", "not tested: conservative context guard",
                     "not tested: native context limit unverified", "not tested: excluded (#3111)")
 PLANNED_TAGS = ("added 9 Nov, no league record", "planned 23 Nov, no league record",
-                "delivery unverified (our evidence gap)")
+                "planned 24 Nov, no league record", "delivery unverified (our evidence gap)")
 PLANNED_GROUPS = ("chat", "decision")
 PLANNED_ROW = DICT(dict(setup=MODEL[1]["setup"], group=("enum", PLANNED_GROUPS), tag=OPT(("enum", PLANNED_TAGS)),
                         params_model=OPT(MODEL[1]["setup"])),

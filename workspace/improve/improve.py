@@ -183,6 +183,14 @@ MODELS = {
                              expect=dict(models=["gpt-6.1-sol"], allow_dated=True)),
     "gpt-6-astra-high": dict(setup="GPT-6 Astra (high)", lane="subscription",
                              expect=dict(models=["gpt-6-astra"], allow_dated=True)),
+    "gpt-6.2-astra-high": dict(setup="GPT-6.2 Astra (high)", lane="subscription",
+                               expect=dict(models=["gpt-6.2-astra"], allow_dated=True)),
+    "gpt-6.2-sol-high": dict(setup="GPT-6.2 Sol (high)", lane="subscription",
+                             expect=dict(models=["gpt-6.2-sol"], allow_dated=True)),
+    "gemini-4-neon-high": dict(setup="Gemini 4 Neon (high)", lane="subscription",
+                               expect=dict(models=["gemini-4-neon"], model_pointer="/response/modelVersion")),
+    "claude-fable-5.2-high": dict(setup="Claude Fable 5.2 (high)", lane="subscription", quota_pause=True,
+                                  expect=dict(models=["claude-fable-5-2"])),
 }
 
 # Dated amendments to the roster (plan §3), recorded here and on the page; the plan's text is unchanged (its sha256 is
@@ -240,6 +248,14 @@ AMENDMENTS = [
               "invalid answers passes, then it plays the full schedule. Before each later step, the same context-fit "
               "check applies: if its next lesson call or game's lessons would not fit, it stops there and lessons are "
               "never shortened."),
+    dict(at="2026-11-24", path="MODELS",
+         added=["gemini-4-neon-high", "gpt-6.2-astra-high", "gpt-6.2-sol-high", "claude-fable-5.2-high"],
+         source="Ümit's subscription Learning decision of 24 Nov 2026",
+         note="Added: the current subscription successors, each under the same rule, prompt, test and schedule. "
+              "Gemini 4 Neon uses Antigravity at thinking high; GPT-6.2 Astra and Sol use the ChatGPT/Codex route "
+              "at reasoning high; Claude Fable 5.2 uses the separate Claude subscription at adaptive-thinking effort "
+              "high with a 32,768-token output limit. Subscription use is prioritized ahead of a new paid API route. "
+              "Claude Opus 5.5 is not rerun: its existing Learning run is already complete."),
 ]
 
 # The 2026-11-20 amendment's validity check (Ümit #13295): a gated model whose E1 has more than this share of invalid

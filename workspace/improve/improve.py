@@ -1352,8 +1352,8 @@ def response_ids(key, step):
     d = step_dir(key, step)
     names = [test_name(key, step)] if step.startswith("E") else []
     if step.startswith("S"):
-        for a in range(1, attempt_of(key, step) + 1):
-            names += [game_name(key, series_of(step), a), test_name(key, step, a)]
+        a = attempt_of(key, step)
+        names += [game_name(key, series_of(step), a), test_name(key, step, a)]
     if db_path(key).exists():
         db = sqlite3.connect(f"file:{db_path(key)}?mode=ro", uri=True, timeout=60)
         q = [
@@ -1378,7 +1378,7 @@ def response_ids(key, step):
                     except sqlite3.OperationalError:
                         pass
         db.close()
-    for f in d.rglob("lessons-g*.call.json"):
+    for f in d.glob("lessons-g*.call.json"):
         out += [(x.get("identity"), x.get("response"))
                 for x in json.loads(f.read_text()).get("exchanges", [])]
     exp = MODELS[key].get("expect") or {}

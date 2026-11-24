@@ -495,6 +495,19 @@ class Money(Isolated):
         db.close()
         self.assertEqual(I.response_ids(key, step), [("gpt-6.2-astra", None)])
 
+    def test_response_ids_excludes_archived_series_attempts(self):
+        key, step = "gpt-6.2-astra-high", "S1"
+        d = I.step_dir(key, step)
+        archived = d / "attempt-1"
+        archived.mkdir(parents=True)
+        missing = {"exchanges": [{"response": "old answer"}]}
+        checked = {"exchanges": [{"response": "new answer", "identity": json.dumps({
+            "result": "accepted", "fields": {"model": "gpt-6.2-astra", "provider": None},
+        })}]}
+        (archived / "lessons-g01.call.json").write_text(json.dumps(missing))
+        (d / "lessons-g01.call.json").write_text(json.dumps(checked))
+        self.assertEqual(I.response_ids(key, step), [("gpt-6.2-astra", None)])
+
     def test_billed_players_carry_the_route_guard(self):
         p = I.player_config("deepseek-v4.1-flash-on", "n", 1)
         self.assertEqual(p["expect_route"]["models"][0], "deepseek/deepseek-v4.1-flash")

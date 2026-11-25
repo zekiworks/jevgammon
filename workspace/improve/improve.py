@@ -226,32 +226,43 @@ MODELS = {
     ),
     "claude-fable-5.2-high": dict(setup="Claude Fable 5.2 (high)", lane="subscription", quota_pause=True,
                                   expect=dict(models=["claude-fable-5-2"])),
+    "deepseek-v4.1-flash-1017-high": dict(
+        setup="DeepSeek V4.1 Flash 1017 (high)",
+        lane="subscription",
+        quota_pause=True,
+        expect=dict(models=["deepseek-v4.1-flash-1017"]),
+        settings=dict(
+            name="DeepSeek V4.1 Flash 1017 (high)",
+            spec="alibaba-token-plan/deepseek-v4.1-flash-1017",
+            provider="alibaba-token-plan",
+            reasoning="high",
+            top_logprobs=5,
+            letter_readout="answer",
+            note="Can's Alibaba Token Plan from OMP; exact deepseek-v4.1-flash-1017 response identity verified "
+                 "before Learning; reasoning high; no paid API route.",
+            parallel=4,
+        ),
+    ),
     "qwen4-max-high": dict(
         setup="Qwen4 Max (high)",
-        lane="openrouter",
-        billed=True,
+        lane="subscription",
+        quota_pause=True,
+        historically_billed=True,
         estimate=134.66,
         S=17.88,
         E=10.00,
         price=(1.425, 0.07125, 4.275),
-        expect=dict(models=["qwen/qwen4-max", "qwen/qwen4-max-20261115"], provider="Alibaba"),
+        expect=dict(models=["qwen4-max"]),
         settings=dict(
             name="Qwen4 Max (high)",
-            spec="openai-compatible/qwen/qwen4-max",
-            provider="openrouter:alibaba",
-            base_url="https://openrouter.ai/api/v1",
-            api_key_env="OPENROUTER_API_KEY",
+            spec="alibaba-token-plan/qwen4-max",
+            provider="alibaba-token-plan",
             reasoning="high",
-            request=dict(
-                provider=dict(order=["alibaba"], allow_fallbacks=False, require_parameters=True),
-                usage=dict(include=True),
-            ),
             top_logprobs=5,
             letter_readout="answer",
-            price=dict(input_per_mtok=1.425, output_per_mtok=4.275),
-            note="Alibaba's sole OpenRouter endpoint, fallbacks off; reasoning high; maker defaults otherwise.",
+            note="E1 and S1 used Alibaba through OpenRouter. From S2, Can's Alibaba Token Plan from OMP serves "
+                 "the exact qwen4-max identity at reasoning high with no paid API route.",
             parallel=4,
-            rpm=18,
         ),
     ),
 }
@@ -337,6 +348,14 @@ AMENDMENTS = [
               "preregistered $20.93 to $17.88 in proportion to actual E1 versus its $10 estimate. Can approved S1 "
               "only; its ledger remains hard-limited by the unchanged experiment share, preserving the decision-model "
               "reserve. Stop after S1 and report actual cost before S2."),
+    dict(at="2026-11-25", path="MODELS", added=["deepseek-v4.1-flash-1017-high"], source="Can #16808",
+         note="Added: DeepSeek V4.1 Flash 1017 at reasoning high through Can's Alibaba Token Plan stored in OMP, "
+              "under the same rule, prompt, test and schedule. A direct constrained-schema route probe returned the "
+              "exact model identity deepseek-v4.1-flash-1017; no paid API route is used."),
+    dict(at="2026-11-25", path="MODELS", added=[], source="Can #16808",
+         note="Changed: Qwen4 Max High moves from Alibaba through OpenRouter to Can's Alibaba Token Plan after its "
+              "completed E1 and S1. Those two steps and their $28.198758 bill remain unchanged; S2 onward uses the "
+              "exact qwen4-max identity at reasoning high with no paid API route and no rerun of completed steps."),
 ]
 
 # The 2026-11-20 amendment's validity check (Ümit #13295): a gated model whose E1 has more than this share of invalid
@@ -529,7 +548,11 @@ def reported(key) -> float:
 
 
 def billed_total(keys=None) -> float:
-    return sum(billed(k) for k in (keys or MODELS) if MODELS[k].get("billed"))
+    return sum(
+        billed(k)
+        for k in (keys or MODELS)
+        if MODELS[k].get("billed") or MODELS[k].get("historically_billed")
+    )
 
 
 def step_estimate(key, step) -> float:
@@ -1845,12 +1868,13 @@ def model_summary(key):
         b = e.get("binary") if e["event"] == "step_start" else None
         if b and (pin := dict(commit=b.get("commit"), sha256=b.get("sha256"))) not in runner:
             runner.append(pin)
-    return dict(key=key, setup=m["setup"], route=route, billed=bool(m.get("billed")), state=state,
+    billed_history = bool(m.get("billed") or m.get("historically_billed"))
+    return dict(key=key, setup=m["setup"], route=route, billed=billed_history, state=state,
                 reason=public_reason(reason),
                 progress=progress(key, state, reason),
                 steps_done=[s for s in STEPS if step_done(key, s)], empty=empty, series=series, runner=runner,
-                cost=dict(billed_usd=round(billed(key), 4) if m.get("billed") else 0.0,
-                          reported_usd=round(reported(key), 4) if m.get("billed") else None,
+                cost=dict(billed_usd=round(billed(key), 4) if billed_history else 0.0,
+                          reported_usd=round(reported(key), 4) if billed_history else None,
                           api_equivalent_usd=api_equivalent(key), estimate_usd=m.get("estimate")))
 
 

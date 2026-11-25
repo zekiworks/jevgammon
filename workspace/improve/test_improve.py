@@ -894,27 +894,44 @@ class SubscriptionSuccessors(unittest.TestCase):
              {"top_p": 0.95}, 4),
         )
 
+    def test_deepseek_1017_uses_the_verified_alibaba_subscription(self):
+        key = "deepseek-v4.1-flash-1017-high"
+        model = I.MODELS[key]
+        amendment = next(a for a in I.AMENDMENTS if a.get("added") == [key])
+        self.assertIn("exact model identity deepseek-v4.1-flash-1017", amendment["note"])
+        settings = I.model_settings(key)
+        self.assertEqual(
+            (model["lane"], model["expect"], model["quota_pause"], settings["spec"], settings["provider"],
+             settings["reasoning"], settings["parallel"]),
+            ("subscription", {"models": ["deepseek-v4.1-flash-1017"]}, True,
+             "alibaba-token-plan/deepseek-v4.1-flash-1017", "alibaba-token-plan", "high", 4),
+        )
+
+
 
 
 
 
 class Qwen4Max(unittest.TestCase):
-    """Ümit #16378/#16380/#16384: run Qwen4 Max High E1 alone, then report actual cost before S1."""
+    """Qwen4 Max High keeps E1/S1 costs, then uses Can's Alibaba subscription from S2."""
 
-    def test_high_e1_uses_the_preregistered_alibaba_route(self):
+    def test_completed_paid_steps_cut_over_to_the_verified_subscription(self):
         key = "qwen4-max-high"
-        m = I.MODELS[key]
-        amendment = next(a for a in I.AMENDMENTS if a.get("added") == [key])
-        self.assertIn("Stop after S1", amendment["note"])
-        self.assertEqual((m["lane"], m["estimate"], m["S"], m["E"], m["price"], m["expect"]),
-                         ("openrouter", 134.66, 17.88, 10.0, (1.425, 0.07125, 4.275),
-                          {"models": ["qwen/qwen4-max", "qwen/qwen4-max-20261115"],
-                           "provider": "Alibaba"}))
+        model = I.MODELS[key]
+        amendment = next(a for a in I.AMENDMENTS if a.get("source") == "Can #16808" and
+                         "Qwen4 Max High" in a["note"])
+        self.assertIn("S2 onward", amendment["note"])
+        self.assertEqual(
+            (model["lane"], model.get("billed"), model["historically_billed"], model["estimate"], model["S"],
+             model["E"], model["price"], model["expect"], model["quota_pause"]),
+            ("subscription", None, True, 134.66, 17.88, 10.0, (1.425, 0.07125, 4.275),
+             {"models": ["qwen4-max"]}, True),
+        )
         settings = I.model_settings(key)
-        self.assertEqual((settings["spec"], settings["provider"], settings["reasoning"], settings["parallel"]),
-                         ("openai-compatible/qwen/qwen4-max", "openrouter:alibaba", "high", 4))
-        self.assertEqual(settings["request"]["provider"],
-                         {"order": ["alibaba"], "allow_fallbacks": False, "require_parameters": True})
+        self.assertEqual(
+            (settings["spec"], settings["provider"], settings["reasoning"], settings["parallel"]),
+            ("alibaba-token-plan/qwen4-max", "alibaba-token-plan", "high", 4),
+        )
         settings["reasoning"] = "changed"
         self.assertEqual(I.model_settings(key)["reasoning"], "high")
 class Inkling(Isolated):

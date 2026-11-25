@@ -45,6 +45,8 @@ const ANTIGRAVITY_CLIENT_SECRET_ENV: &str = "ANTIGRAVITY_OAUTH_CLIENT_SECRET";
 const ANTIGRAVITY: &str = "google-antigravity";
 /// OMP's provider id for its xAI (Grok subscription) login.
 const XAI: &str = "xai-oauth";
+/// OMP's provider id for its Kimi Code subscription login.
+const KIMI_CODE: &str = "kimi-code";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Subscription {
@@ -54,6 +56,8 @@ pub enum Subscription {
     Antigravity,
     /// xAI (Grok through `api.x.ai`), OMP's login.
     Xai,
+    /// Moonshot Kimi Code, OMP's login.
+    Kimi,
 }
 
 impl Subscription {
@@ -63,6 +67,7 @@ impl Subscription {
             Subscription::Anthropic => "anthropic",
             Subscription::Antigravity => ANTIGRAVITY,
             Subscription::Xai => XAI,
+            Subscription::Kimi => KIMI_CODE,
         }
     }
 
@@ -72,6 +77,7 @@ impl Subscription {
             Subscription::Anthropic => "Anthropic (Claude)",
             Subscription::Antigravity => "Google Antigravity",
             Subscription::Xai => "xAI (Grok)",
+            Subscription::Kimi => "Moonshot Kimi Code",
         }
     }
 }
@@ -188,10 +194,15 @@ impl Credentials {
                 candidates.extend(stored_antigravity()?);
                 "log in to Google Antigravity with omp (/login)"
             }
-            Subscription::Xai => {
+            Subscription::Xai | Subscription::Kimi => {
+                let provider = self.provider.qfork_name();
                 looked.push(omp_db_path().display().to_string());
-                candidates.extend(read_omp(&omp_db_path(), XAI, xai_token)?);
-                "log in to xAI (Grok) with omp (/login)"
+                candidates.extend(read_omp(&omp_db_path(), provider, oauth_token)?);
+                if self.provider == Subscription::Xai {
+                    "log in to xAI (Grok) with omp (/login)"
+                } else {
+                    "log in to Kimi Code with omp (/login)"
+                }
             }
         };
         candidates
@@ -207,8 +218,8 @@ impl Credentials {
     }
 
     async fn refresh(&self, stale: Token) -> Result<Token> {
-        if self.provider == Subscription::Xai {
-            return refresh_xai(&stale).await;
+        if matches!(self.provider, Subscription::Xai | Subscription::Kimi) {
+            return refresh_omp(&stale, self.provider).await;
         }
         let _guard = match &stale.source {
             Source::Qfork(root) => Some(
@@ -314,7 +325,12 @@ impl Credentials {
                     ("refresh_token", refresh_token),
                 ])
             }
-            Subscription::Xai => bail!("OMP refreshes the xAI login, not jevgammon"),
+            Subscription::Xai | Subscription::Kimi => {
+                bail!(
+                    "OMP refreshes the {} login, not jevgammon",
+                    self.provider.label()
+                )
+            }
         };
         let response = request.send().await?;
         let status = response.status();
@@ -436,8 +452,8 @@ fn antigravity_token(data: &Value, source: Source) -> Option<Token> {
     })
 }
 
-/// A token from OMP's `xai-oauth` credential JSON: `access`, `refresh`, `expires` (ms).
-fn xai_token(data: &Value, source: Source) -> Option<Token> {
+/// A token from OMP's OAuth credential JSON: `access`, `refresh`, `expires` (ms).
+fn oauth_token(data: &Value, source: Source) -> Option<Token> {
     Some(Token {
         access: data.get("access")?.as_str()?.to_owned(),
         account_id: None,
@@ -448,14 +464,15 @@ fn xai_token(data: &Value, source: Source) -> Option<Token> {
     })
 }
 
-/// A fresh xAI token other than `stale`: re-read once another caller may have had OMP
-/// refresh it, else after OMP refreshed its own login (xAI rotates refresh tokens, so only
-/// OMP may spend its refresh token).
-async fn refresh_xai(stale: &Token) -> Result<Token> {
-    let _guard = lock(&jevgammon_state_dir(), &format!("{XAI}.oauth-refresh")).await?;
+/// A fresh OMP-owned token other than `stale`: re-read once another caller may have had OMP
+/// refresh it, else ask OMP to refresh its own login. These providers rotate refresh tokens,
+/// so only OMP may spend them.
+async fn refresh_omp(stale: &Token, subscription: Subscription) -> Result<Token> {
+    let provider = subscription.qfork_name();
+    let _guard = lock(&jevgammon_state_dir(), &format!("{provider}.oauth-refresh")).await?;
     let path = omp_db_path();
     let fresh = || -> Result<Option<Token>> {
-        Ok(read_omp(&path, XAI, xai_token)?
+        Ok(read_omp(&path, provider, oauth_token)?
             .into_iter()
             .filter(|t| t.access != stale.access && !t.needs_refresh())
             .max_by_key(|t| t.expires_at_ms))
@@ -467,14 +484,14 @@ async fn refresh_xai(stale: &Token) -> Result<Token> {
         .map(PathBuf::from)
         .unwrap_or_else(|| dirs::home_dir().unwrap_or_default().join(".local/bin/omp"));
     let output = tokio::process::Command::new(&omp)
-        .args(["token", XAI, "--force-refresh"])
+        .args(["token", provider, "--force-refresh"])
         .stdin(std::process::Stdio::null())
         .output()
         .await
         .with_context(|| format!("running {}", omp.display()))?;
     if !output.status.success() {
         bail!(
-            "`{} token {XAI} --force-refresh` failed ({}): {}",
+            "`{} token {provider} --force-refresh` failed ({}): {}",
             omp.display(),
             output.status,
             snippet(&String::from_utf8_lossy(&output.stderr))
@@ -482,7 +499,7 @@ async fn refresh_xai(stale: &Token) -> Result<Token> {
     }
     fresh()?.ok_or_else(|| {
         anyhow!(
-            "OMP refreshed its {XAI} login, but {} holds no fresh token",
+            "OMP refreshed its {provider} login, but {} holds no fresh token",
             path.display()
         )
     })
@@ -887,7 +904,8 @@ mod tests {
                  ('google-antigravity', 'oauth', '{\"access\":\"a1\",\"refresh\":\"r1\",\"expires\":5,\"projectId\":\"p\"}', NULL),
                  ('google-antigravity', 'oauth', '{\"access\":\"a0\",\"refresh\":\"r0\",\"expires\":9,\"projectId\":\"p\"}', 'revoked'),
                  ('anthropic', 'oauth', '{\"access\":\"x\",\"refresh\":\"y\",\"expires\":9}', NULL),
-                 ('xai-oauth', 'oauth', '{\"access\":\"g1\",\"refresh\":\"gr\",\"expires\":7,\"accountId\":\"u\"}', NULL);",
+                 ('xai-oauth', 'oauth', '{\"access\":\"g1\",\"refresh\":\"gr\",\"expires\":7,\"accountId\":\"u\"}', NULL),
+                 ('kimi-code', 'oauth', '{\"access\":\"k1\",\"refresh\":\"kr\",\"expires\":11,\"accountId\":\"u\"}', NULL);",
             )
             .unwrap();
         drop(connection);
@@ -902,12 +920,19 @@ mod tests {
             (tokens[0].expires_at_ms, tokens[0].project.as_deref()),
             (5, Some("p"))
         );
-        let grok = read_omp(&db, XAI, xai_token).unwrap();
+        let grok = read_omp(&db, XAI, oauth_token).unwrap();
         assert_eq!(
             grok.iter()
                 .map(|t| (t.access.as_str(), t.expires_at_ms, t.project.is_none()))
                 .collect::<Vec<_>>(),
             vec![("g1", 7, true)]
+        );
+        let kimi = read_omp(&db, KIMI_CODE, oauth_token).unwrap();
+        assert_eq!(
+            kimi.iter()
+                .map(|t| (t.access.as_str(), t.expires_at_ms, t.project.is_none()))
+                .collect::<Vec<_>>(),
+            vec![("k1", 11, true)]
         );
         assert_eq!(fs::read(&db).unwrap(), before);
         assert!(

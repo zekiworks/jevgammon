@@ -239,6 +239,7 @@ pub struct Setup {
     pub anthropic: Arc<Credentials>,
     pub antigravity: Arc<Credentials>,
     pub xai: Arc<Credentials>,
+    pub kimi: Arc<Credentials>,
     /// Request pacers by rate-limit group, shared by every player of the group.
     pacers: parking_lot::Mutex<HashMap<String, Arc<Pacer>>>,
 }
@@ -299,6 +300,11 @@ impl Setup {
                 qfork_root.clone(),
                 http.clone(),
             )),
+            kimi: Arc::new(Credentials::new(
+                Subscription::Kimi,
+                qfork_root.clone(),
+                http.clone(),
+            )),
             http,
             qfork_root,
             local_url,
@@ -335,6 +341,7 @@ pub fn render_stage_b(
             llm::antigravity_model(model, config.reasoning.as_deref()),
         ),
         "xai" | "xai-oauth" | "grok" => (llm::Route::Xai, model.to_owned()),
+        "kimi" | "kimi-code" => (llm::Route::Kimi, model.to_owned()),
         "local" | "openai-compatible" | "ollama" => {
             (llm::Route::OpenAiCompatible, model.to_owned())
         }
@@ -538,6 +545,15 @@ impl Player {
                     http,
                     need_model(model)?,
                     setup.xai.clone(),
+                    options,
+                ))
+            }
+            "kimi" | "kimi-code" => {
+                setup.kimi.token().await?;
+                Backend::Llm(llm::LlmClient::kimi(
+                    http,
+                    need_model(model)?,
+                    setup.kimi.clone(),
                     options,
                 ))
             }

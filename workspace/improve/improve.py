@@ -208,6 +208,21 @@ MODELS = {
             parallel=4,
         ),
     ),
+    "kimi-k3.1-pro-high": dict(
+        setup="Kimi K3.1 Pro (high)",
+        lane="subscription",
+        expect=dict(models=["k3.1-pro"]),
+        settings=dict(
+            name="Kimi K3.1 Pro (high)",
+            spec="kimi-code/k3.1-pro",
+            provider="kimi-code-subscription",
+            reasoning="high",
+            request=dict(top_p=0.95),
+            note="Moonshot Kimi Code subscription from OMP; exact k3.1-pro response identity verified before "
+                 "Learning; reasoning high and maker top_p 0.95; no paid API route.",
+            parallel=4,
+        ),
+    ),
     "claude-fable-5.2-high": dict(setup="Claude Fable 5.2 (high)", lane="subscription", quota_pause=True,
                                   expect=dict(models=["claude-fable-5-2"])),
     "qwen4-max-high": dict(
@@ -309,6 +324,10 @@ AMENDMENTS = [
          note="Added: Gemini 4 Carbon through the Antigravity subscription at thinking high, under the same rule, "
               "prompt, test and schedule. It runs after Gemini 4 Neon without interrupting Neon. The stored route "
               "smoke reply identifies itself as gemini-4-carbon; no paid API route is used."),
+    dict(at="2026-11-25", path="MODELS", added=["kimi-k3.1-pro-high"], source="Can #16750",
+         note="Added: Kimi K3.1 Pro at reasoning high through Can's Kimi Code subscription stored in OMP, under "
+              "the same rule, prompt, test and schedule. A direct constrained-schema route probe returned the exact "
+              "model identity k3.1-pro. OMP owns and refreshes its short-lived token; no paid API route is used."),
     dict(at="2026-11-24", path="MODELS", added=["qwen4-max-high"],
          source="Ümit #16378/#16380/#16384; Can #16568",
          note="Focused newest-model cohort starts one paid model at a time. Qwen4 Max runs first at reasoning high, "

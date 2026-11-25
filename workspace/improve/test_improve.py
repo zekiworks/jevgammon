@@ -876,6 +876,21 @@ class SubscriptionSuccessors(unittest.TestCase):
         self.assertEqual((settings["provider"], settings["spec"], settings["reasoning"], settings["parallel"]),
                          ("antigravity-subscription", "antigravity/gemini-4-carbon", "high", 4))
 
+    def test_kimi_uses_the_verified_omp_subscription(self):
+        key = "kimi-k3.1-pro-high"
+        model = I.MODELS[key]
+        amendment = next(a for a in I.AMENDMENTS if a.get("added") == [key])
+        self.assertIn("exact model identity k3.1-pro", amendment["note"])
+        self.assertEqual(model["expect"], {"models": ["k3.1-pro"]})
+        settings = I.model_settings(key)
+        self.assertEqual(
+            (model["lane"], settings["provider"], settings["spec"], settings["reasoning"],
+             settings["request"], settings["parallel"]),
+            ("subscription", "kimi-code-subscription", "kimi-code/k3.1-pro", "high",
+             {"top_p": 0.95}, 4),
+        )
+
+
 
 
 

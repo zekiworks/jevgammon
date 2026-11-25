@@ -881,6 +881,8 @@ class SubscriptionSuccessors(unittest.TestCase):
     def test_kimi_uses_the_verified_omp_subscription(self):
         key = "kimi-k3.1-pro-high"
         model = I.MODELS[key]
+        self.assertTrue(model["quota_pause"])
+        self.assertTrue(I.player_config(key, "probe", 1)["quota_pause"])
         amendment = next(a for a in I.AMENDMENTS if a.get("added") == [key])
         self.assertIn("exact model identity k3.1-pro", amendment["note"])
         self.assertEqual(model["expect"], {"models": ["k3.1-pro"]})

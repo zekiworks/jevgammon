@@ -211,6 +211,7 @@ MODELS = {
     "kimi-k3.1-pro-high": dict(
         setup="Kimi K3.1 Pro (high)",
         lane="subscription",
+        quota_pause=True,
         expect=dict(models=["k3.1-pro"]),
         settings=dict(
             name="Kimi K3.1 Pro (high)",

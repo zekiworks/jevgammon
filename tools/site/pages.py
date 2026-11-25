@@ -1510,7 +1510,8 @@ def model_page(S, dataset: str, name: str, entry: dict | None, smoke_row: dict |
         cells += f"<dt>No trade-off</dt><dd>{count(int(r['no_trade_off']))} (left out of every risk metric)</dd>"
         note = f'<p class="note">{esc(play_order_note(S))}</p>' if dataset == "v1-set" else ""
         parts.append(f'<section class="card" id="results"><h2>Results in {esc(where)}</h2>{note}<dl class="facts">{cells}</dl>'
-                     f'<p><a href="{rel}data/{"v1/v1-set" if dataset == "v1-set" else "v3/" + dataset}/{setup_slug(dataset, name)}.json">JSON</a></p></section>')
+                     f'<p><a href="{rel}decisions/?d={esc(dataset)}&amp;s={esc(setup_slug(dataset, name))}">Every scored decision</a> · '
+                     f'<a href="{rel}data/{"v1/v1-set" if dataset == "v1-set" else "v3/" + dataset}/{setup_slug(dataset, name)}.json">JSON</a></p></section>')
         if r["trade_off"]:
             top = max(r["calls"].values()) or 1
             bars = "".join(f'<div class="cc-row"><span class="cc-l">{esc(lab)}</span><span class="cc-bar {cls}" '
@@ -1681,10 +1682,11 @@ def status_list(S) -> str:
 # The Data page's downloads and how-to-recompute text, also on the About page (both pages are one level down, so the
 # links are the same).
 DOWNLOADS = ('<p class="hero-links"><a class="key" href="../data/results.json" download="results.json">results.json</a> '
-             '<a class="key" href="../new-models/">New models: first look</a> <a class="key" href="../models/">Every model setup</a></p>'
-             '<p>results.json: every league\'s results per setup, one league per key, every risk metric at both margins. '
-             'Per-decision records (positions, plays, the engine\'s best play) are not published: '
-             '<a href="../decisions/">why</a>.</p>')
+             '<a class="key" href="../decisions/index.json" download="decisions-index.json">decision index</a> '
+             '<a class="key" href="../new-models/">New models: first look</a> '
+             '<a class="key" href="../models/">Every model setup</a></p>'
+             '<p>results.json has every league result per setup and every risk metric at both margins. '
+             'The decision index links every scored position, the plays shown, the model choice and GNUbg scoring.</p>')
 
 
 def recompute(thresholds_href: str) -> str:
@@ -1703,8 +1705,8 @@ def data_page(S, out: Path) -> str:
             + f'<section class="card" id="downloads"><h2>Downloads</h2>{DOWNLOADS}'
               + SWIPE + table(["File", "Bytes", "sha256"], [rows], "Data files of this build", cls="board list")
               + f'<p class="table-note">Data files are split per version, league and model, '
-              f'so each loads on a phone. Every number on the site is in one of them. The shared rules texts of the prompts '
-              f'are under <code>decisions/contexts/</code> ({count(S["decision_files"])} files).</p></section>'
+              f'so each loads on a phone. Every number on the site is in one of them. '
+              f'The per-decision browser and its rules texts contain {count(S["decision_files"])} files.</p></section>'
             + f'<section class="card" id="status"><h2>Analysis status</h2>{status_list(S)}</section>'
             + '<section class="card" id="versions"><h2>Versions</h2><dl class="facts">'
               '<dt>v3</dt><dd>Prompt bg-v2, plays in a seeded random order, invalid answers not retried. Leagues 1 to 3 and the shared positions.</dd>'
@@ -2110,7 +2112,7 @@ def description(S) -> str:
 # --- Write ----------------------------------------------------------------------------------------------------
 
 def write_all(S, out: Path, base: str) -> None:
-    import decisions_export
+    import public_decisions
     import home
     import method
     S["description"] = description(S)
@@ -2182,7 +2184,8 @@ def write_all(S, out: Path, base: str) -> None:
     for path, title, body in improve_page.registration_pages(S["improve"]):
         put(path, title, body, dataset="improve")
     put("data/", "Data", data_page(S, out))
-    put("decisions/", "Every decision", decisions_page(S, decisions_export.body(S["decision_contexts"])))
+    put("decisions/", "Every decision", decisions_page(S, public_decisions.body()),
+        scripts=("decisions.js",), styles=("decisions.css",))
     put("highlights/", "Highlights", highlights_page(S),
         description="Highlights of the backgammon benchmark: findings the site already shows, each with its numbers.")
     put("experiments/", "Experiments", experiments_page(S),

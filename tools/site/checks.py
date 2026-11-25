@@ -25,9 +25,6 @@
 8. The "Did they improve?" page (improve_page.py): the pre-registered texts, one row per plan model in the plan's sort
    order, no Yes/No before a model's verdict gate, every shown score recomputed from the data file's tests, no results
    block in pre-registration-only mode, and no test position in the page or its data file (check_improve).
-9. No published questions (check_no_questions): no file, the frozen results/ and archive/ copies included, holds a
-   decision record (a board with its plays or best play) or draws a board; decisions/ holds only its note page and
-   the shared rules texts.
 """
 
 import gzip
@@ -1008,61 +1005,48 @@ def run(S: dict, out: Path) -> list[str]:
     failures += check_model_classes(out)
     failures += check_bench_scores(S, out)
     failures += check_highlight_cards(out)
-    failures += check_no_questions(out)
+    failures += check_decision_evidence(out)
     return failures
 
 
-# A backgammon move as the site writes plays ("13/9", "bar/23", "6/off").
-MOVE = re.compile(r"\b(?:bar|\d{1,2})/(?:off|\d{1,2})\b")
-
-
-def _items(x) -> bool:
-    """Whether a JSON value holds a decision record: a board together with its plays, the best or the chosen play; or
-    a disagreement row (a position's best_share) carrying a play: a move string or a payload keyed by moves."""
-    if isinstance(x, dict):
-        if "board" in x and any(k in x for k in ("best", "chosen", "plays")):
-            return True
-        if "best_share" in x and any(MOVE.search(str(k)) or isinstance(v, str) and MOVE.search(v) or
-                                     isinstance(v, (dict, list)) and MOVE.search(json.dumps(v)) for k, v in x.items()):
-            return True
-        return any(_items(v) for v in x.values())
-    return isinstance(x, list) and any(_items(v) for v in x)
-
-
-# A position as the prompts write it (STATE/prompts.db's turn text): the mover's checkers with real point:count pairs.
-POSITION_TEXT = re.compile(r"your checkers:\s+\d+:\d+")
-
-
-def check_no_questions(out: Path) -> list[str]:
-    """No bench publishes its questions (Ümit via Zeki #11048, #11050, #11091): no file anywhere in the output, the
-    frozen results/ and archive/ copies included, holds a decision record (a board with its plays or the engine's best
-    play) or a disagreement row with a play (_items), draws a board (board.py's SVG, class bd-frame), writes a position
-    as a prompt does (POSITION_TEXT) or shows a play in a Where models disagree row (data-dataset="v1-set" rows of
-    disagreements/index.html); decisions/ holds only its note page and the shared rules texts (contexts/*.txt)."""
+def check_decision_evidence(out: Path) -> list[str]:
+    """The public evidence browser has every setup's declared pages and a readable decision payload."""
+    index_path = out / "decisions/index.json"
+    page = out / "decisions/index.html"
+    assets = [out / "decisions.js", out / "decisions.css"]
+    missing = [str(p.relative_to(out)) for p in [index_path, page, *assets] if not p.is_file()]
+    if missing:
+        return [f"decision evidence: missing {', '.join(missing)}"]
+    html = page.read_text()
     bad = []
-    for p in out.rglob("*"):
-        if not p.is_file():
-            continue
-        rel = p.relative_to(out)
-        if rel.parts[0] == "decisions" and not (rel.parts[1:] == ("index.html",) or (
-                len(rel.parts) == 3 and rel.parts[1] == "contexts" and p.suffix == ".txt")):
-            bad.append(f"{rel}: decisions/ holds only index.html and contexts/*.txt")
-        if p.name.endswith((".json", ".json.gz")):
-            raw = p.read_bytes()
-            if _items(json.loads(gzip.decompress(raw) if p.suffix == ".gz" else raw)):
-                bad.append(f"{rel}: holds a decision record (a board with its plays or best play) or a disagreement "
-                           f"row with a play")
-        elif p.suffix in (".html", ".js", ".txt"):
-            text = p.read_text(errors="replace")
-            if "bd-frame" in text:
-                bad.append(f"{rel}: draws a board")
-            if POSITION_TEXT.search(text):
-                bad.append(f"{rel}: writes a position as a prompt does")
-            if rel.parts[-2:] == ("disagreements", "index.html") and any(
-                    MOVE.search(re.sub(r"<[^>]+>", " ", row))
-                    for row in re.findall(r'<tr data-dataset="v1-set">.*?</tr>', text, re.S)):
-                bad.append(f"{rel}: a disagreement row shows a play")
+    if "What did each model see, and what did it play?" not in html or "decisions.js" not in html:
+        bad.append("decisions/index.html: public decision browser is not wired")
+    doc = json.loads(index_path.read_text())
+    datasets = doc.get("datasets") or []
+    if not datasets:
+        bad.append("decisions/index.json: no datasets")
+    for dataset in datasets:
+        for setup in dataset.get("setups") or []:
+            root = out / "decisions" / dataset["id"] / setup["slug"]
+            if setup["decisions"] <= 0 or setup["pages"] <= 0:
+                bad.append(f"decisions/index.json: {dataset['id']}/{setup['name']} has no decisions")
+                continue
+            expected = [root / f"{number}.json.gz" for number in range(1, setup["pages"] + 1)]
+            missing_pages = [p.name for p in expected if not p.is_file()]
+            if missing_pages:
+                bad.append(f"decisions/index.json: {dataset['id']}/{setup['name']} missing pages "
+                           + ", ".join(missing_pages[:3]))
+                continue
+            first = json.loads(gzip.decompress(expected[0].read_bytes()))
+            decisions = first.get("decisions") or []
+            required = {"board", "dice", "plays", "chosen", "best", "phase"}
+            if not decisions or not required <= decisions[0].keys():
+                bad.append(f"{expected[0].relative_to(out)}: no complete decision record")
+            if not (root / "risk.json.gz").is_file():
+                bad.append(f"decisions/index.json: {dataset['id']}/{setup['name']} missing risk index")
     return bad
+
+
 
 
 def check_highlight_cards(out: Path) -> list[str]:

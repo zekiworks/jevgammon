@@ -46,8 +46,8 @@ BASE = "https://zekiworks.github.io/analysis/backgammon/"
 # The files of tools/site/assets/ copied to the site's root (hilde-leaf-transparent.png: the header mark; hilde-bench-icon*: the suite's own tab icon, byte-identical from turkce's ~/code/atlas/site, Ümit #11630, turkce #11677; formerly the Reader's favicon/apple-touch
 # PNGs: Hilde Reader's mark, byte-identical from zekiworks/hilde dd56ed2f, Ümit #10114).
 ASSETS = ("site.css", "site.js", "tables.js", "png.js", "bg.css", "suite-bar.css", "bg.js",
-          "hilde-leaf-transparent.png", "hilde-bench-icon.svg", "hilde-bench-icon-16.png",
-          "hilde-bench-icon-32.png", "hilde-bench-icon-180.png", "zw-ui.css", "zw-ui.js")
+          "decisions.css", "decisions.js", "hilde-leaf-transparent.png", "hilde-bench-icon.svg",
+          "hilde-bench-icon-16.png", "hilde-bench-icon-32.png", "hilde-bench-icon-180.png", "zw-ui.css", "zw-ui.js")
 # The Zeki Works bench kit (turkce, zw-ui v2.7 from tb-next 5d5bc0d5c; Zeki #4879, #9130): zw_ui.py writes the
 # leaderboard's and the /improve/ results block, zw-ui.css and zw-ui.js paint and run it. Copied byte for byte, never
 # edited here: the build fails unless each file is the shared kit's (its sha256), as the suite strip and the maker
@@ -110,6 +110,7 @@ def compute(args) -> dict:
     leagues = []
     audit = O.load_audit()
     boots = {}
+    close_records = {}
     for lg in L["leagues"]:
         names = lg["names"]
         summary = A.dataset_summary(lg["dataset"], lg["decisions"], names)
@@ -117,6 +118,7 @@ def compute(args) -> dict:
         boots[lg["dataset"]] = offline.pop("_boot")
         # Close choices (Method spec 2026-10-24 §9): per setup.
         close = CC.league(lg, audit, state / "plays")
+        close_records.update(close["records"])
         for n, s in summary.items():
             s["close"] = close["setups"].get(n)
         leagues.append(dict(
@@ -195,7 +197,7 @@ def compute(args) -> dict:
         improve=improve_page.from_state(state),
         status=json.loads((CONTENT / "analysis_status.json").read_text()),
         human_scale=json.loads((CONTENT / "human_scale.json").read_text()),
-        _v1_raw=v1, _state=state, _repeat_originals=repeat_originals,
+        _v1_raw=v1, _state=state, _repeat_originals=repeat_originals, _close=close_records,
         # Held late entries shown while they play (held_setups.json "running"): the home leaderboard's unranked rows only.
         _running=L["running"],
         # Runner provenance per shown league (Method, Limits): metadata only, kept out of the data files.
@@ -508,22 +510,6 @@ def preview_redirects(out: Path, target: Path) -> None:
 <body><p>This page moved to <a href="{url}">{url}</a>.</p></body></html>
 """)
 
-ATLAS_BACKGAMMON = "https://zekiworks.github.io/analysis/?v=2&ui=en&section=Backgammon"
-ATLAS_LEARNING = ATLAS_BACKGAMMON + "&panel=Learning&track=Learning+%C2%B7+Own+lessons"
-ATLAS_LEARNING_PILOT = ATLAS_BACKGAMMON + "&panel=Learning+pilot"
-
-
-def close_old_pages(out: Path) -> None:
-    """Close the superseded standalone site while leaving its machine-readable data available to Model Atlas."""
-    for page in out.rglob("index.html"):
-        rel = page.parent.relative_to(out).as_posix()
-        url = ATLAS_LEARNING if rel == "improve" or rel.startswith("improve/") else (
-            ATLAS_LEARNING_PILOT if rel == "learning" or rel.startswith("learning/") else ATLAS_BACKGAMMON)
-        page.write_text(f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="robots" content="noindex">
-<title>Moved to Model Atlas</title><link rel="canonical" href="{url}"><meta http-equiv="refresh" content="0; url={url}">
-<script>location.replace({json.dumps(url)});</script></head>
-<body><p>This page moved to <a href="{url}">Model Atlas</a>.</p></body></html>
-""")
 
 
 
@@ -534,7 +520,6 @@ def main():
     ap.add_argument("--no-image", action="store_true")
     ap.add_argument("--preview-redirects", metavar="DIR",
                     help="write a redirect to the live address for every page of the build into DIR (the old preview path)")
-    ap.add_argument("--keep-standalone-for-export", action="store_true", help=argparse.SUPPRESS)
     args = ap.parse_args()
     check_kit()
     out = Path(args.out).expanduser()
@@ -543,18 +528,16 @@ def main():
     S = relabel(compute(args))
     S["base"] = BASE
     write_data(S, out)
-    import decisions_export
-    if (out / "decisions").exists():
-        shutil.rmtree(out / "decisions")
-    S["decision_contexts"] = decisions_export.export(
-        out, S["_state"] / "snap.db", S["_state"] / "plays", S["_state"] / "prompts.db", [lg["id"] for lg in S["leagues"]])
+    import public_decisions
+    datasets = [dict(id=lg["dataset"], label=f"League {lg['id']}", version="v3", league_id=lg["id"],
+                     status=PUBLISHED if lg["metric_status"] == PUBLISHED else PROVISIONAL)
+                for lg in S["leagues"]]
+    datasets.append(dict(id="v1-set", label=f"v1 set ({S['v1']['positions']:,} positions)", version="v1",
+                         status=EARLIER, note=pages.play_order_note(S)))
+    S["decisions_export"] = public_decisions.export(
+        out, S["_state"] / "snap.db", S["_state"] / "plays", S["_state"] / "prompts.db", ROOT / "replay.db",
+        ROOT / "positions/v1.jsonl", datasets, S["_close"])
     S["decision_files"] = sum(1 for p in (out / "decisions").rglob("*") if p.is_file())
-    # No longer published (no bench publishes its questions, Ümit via Zeki #11048, #11050): the hero's decision and the
-    # Every decision viewer; and Hilde Reader's own favicons, replaced by the suite's tab icon (Ümit #11630). The build
-    # writes on top of the published site, so their old files are removed here.
-    for gone in ("data/showcase.json", "decisions.js", "decisions.css", "hilde-favicon-16.png", "hilde-favicon-32.png",
-                 "hilde-apple-touch-180.png"):
-        (out / gone).unlink(missing_ok=True)
     # The combined score page's feed (turkce #4062), at the site's root: from the leaderboard's own rows and numbers.
     write_json(out, bench_scores.PATH, bench_scores.build(S))
     S["hash"] = results_hash(out)
@@ -579,11 +562,6 @@ def main():
         for f in failures[:40]:
             print(" -", f, file=sys.stderr)
         sys.exit(2)
-    # Ümit #16861/#16866: Model Atlas is the only reader-facing site. Keep data files for its exporter, but every old
-    # standalone HTML address redirects to Atlas after the old pages have passed their source-data checks. The exporter
-    # may build checked source pages into a non-published branch because some legacy mappers still read their tables.
-    if not args.keep_standalone_for_export:
-        close_old_pages(out)
     report.unlink(missing_ok=True)
     print(json.dumps(dict(results=S["hash"], data_as_of=S["as_of"], decision_files=S["decision_files"],
                           scored={lg["dataset"]: lg["scored"] for lg in S["leagues"]})))

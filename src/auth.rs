@@ -47,6 +47,8 @@ const ANTIGRAVITY: &str = "google-antigravity";
 const XAI: &str = "xai-oauth";
 /// OMP's provider id for its Kimi Code subscription login.
 const KIMI_CODE: &str = "kimi-code";
+/// OMP's provider id for Alibaba's static Token Plan API key.
+const ALIBABA_TOKEN_PLAN: &str = "alibaba-token-plan";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Subscription {
@@ -449,6 +451,40 @@ fn read_omp(
         .filter_map(|data| serde_json::from_str::<Value>(data).ok())
         .filter_map(|data| parse(&data, Source::Omp(path.to_owned())))
         .collect())
+}
+/// A static API key from one enabled OMP credential. OMP remains the sole credential store.
+fn read_omp_key(path: &Path, provider: &str) -> Result<Option<String>> {
+    use rusqlite::{Connection, OpenFlags, OptionalExtension as _};
+    if !path.exists() {
+        return Ok(None);
+    }
+    let connection = Connection::open_with_flags(
+        path,
+        OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX,
+    )
+    .with_context(|| format!("opening {} read-only", path.display()))?;
+    connection.busy_timeout(std::time::Duration::from_secs(5))?;
+    Ok(connection
+        .query_row(
+            "SELECT json_extract(data, '$.key') FROM auth_credentials
+             WHERE provider = ?1 AND disabled_cause IS NULL LIMIT 1",
+            [provider],
+            |row| row.get::<_, Option<String>>(0),
+        )
+        .optional()?
+        .flatten()
+        .filter(|key| !key.is_empty()))
+}
+
+/// Alibaba Token Plan key from OMP's enabled login.
+pub fn alibaba_token_plan_api_key() -> Result<String> {
+    let path = omp_db_path();
+    read_omp_key(&path, ALIBABA_TOKEN_PLAN)?.ok_or_else(|| {
+        anyhow!(
+            "no Alibaba Token Plan login found in {}; log in with omp (/login)",
+            path.display()
+        )
+    })
 }
 
 fn read_cache(path: &Path) -> Result<Option<Token>> {
@@ -920,7 +956,8 @@ mod tests {
                  ('google-antigravity', 'oauth', '{\"access\":\"a0\",\"refresh\":\"r0\",\"expires\":9,\"projectId\":\"p\"}', 'revoked'),
                  ('anthropic', 'oauth', '{\"access\":\"x\",\"refresh\":\"y\",\"expires\":9}', NULL),
                  ('xai-oauth', 'oauth', '{\"access\":\"g1\",\"refresh\":\"gr\",\"expires\":7,\"accountId\":\"u\"}', NULL),
-                 ('kimi-code', 'oauth', '{\"access\":\"k1\",\"refresh\":\"kr\",\"expires\":11,\"accountId\":\"u\"}', NULL);",
+                 ('kimi-code', 'oauth', '{\"access\":\"k1\",\"refresh\":\"kr\",\"expires\":11,\"accountId\":\"u\"}', NULL),
+                 ('alibaba-token-plan', 'api_key', '{\"key\":\"sk-plan\"}', NULL);",
             )
             .unwrap();
         drop(connection);
@@ -948,6 +985,10 @@ mod tests {
                 .map(|t| (t.access.as_str(), t.expires_at_ms, t.project.is_none()))
                 .collect::<Vec<_>>(),
             vec![("k1", 11, true)]
+        );
+        assert_eq!(
+            read_omp_key(&db, ALIBABA_TOKEN_PLAN).unwrap().as_deref(),
+            Some("sk-plan")
         );
         assert_eq!(fs::read(&db).unwrap(), before);
         assert!(

@@ -25,6 +25,8 @@ use crate::dice::{Dice, derive_seed};
 use crate::http::RetryTime;
 use crate::runner::Clock;
 use prompt::PromptVersion;
+const ALIBABA_TOKEN_PLAN_URL: &str =
+    "https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1";
 
 pub struct DecisionRequest<'a> {
     /// Mover's perspective.
@@ -357,6 +359,7 @@ pub fn render_stage_b(config: &PlayerConfig, req: &DecisionRequest<'_>, shown: &
         ),
         "xai" | "xai-oauth" | "grok" => (llm::Route::Xai, model.to_owned()),
         "kimi" | "kimi-code" => (llm::Route::Kimi, model.to_owned()),
+        "alibaba-token-plan" => (llm::Route::OpenAiCompatible, model.to_owned()),
         "local" | "openai-compatible" | "ollama" => (llm::Route::OpenAiCompatible, model.to_owned()),
         other => bail!("{}: provider `{other}` is not a chat model (no prediction call)", config.name),
     };
@@ -570,6 +573,13 @@ impl Player {
                     options,
                 ))
             }
+            "alibaba-token-plan" => Backend::Llm(llm::LlmClient::openai_compatible(
+                http,
+                need_model(model)?,
+                ALIBABA_TOKEN_PLAN_URL.to_owned(),
+                Some(auth::alibaba_token_plan_api_key()?),
+                options,
+            )),
             "ollama" => {
                 let host = std::env::var("OLLAMA_HOST")
                     .unwrap_or_else(|_| "http://localhost:11434".into());

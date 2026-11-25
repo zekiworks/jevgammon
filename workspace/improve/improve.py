@@ -1153,9 +1153,10 @@ def metrics_from(rows, positions):
     calls = dict(right_risk=0, wrong_risk=0, needless=0, missed=0, right_safety=0, none=0)
     rp = sp = invalid = failed = 0
     losses, in_flight = [], []
+    has_in_flight = bool(rows and "in_flight" in rows[0].keys())
     for r in rows:
         p = positions[r["position_id"]]
-        if r["in_flight"] is not None:
+        if has_in_flight and r["in_flight"] is not None:
             in_flight.append(r["in_flight"])
         if r["error"]:
             failed += 1

@@ -552,6 +552,8 @@ class Metrics(unittest.TestCase):
         self.assertAlmostEqual(m["error_rate"], 500 * 0.05 / 3)
         self.assertEqual(m["answer_rate"], 1.5)  # 3 valid of 200
         self.assertEqual(m["in_flight_max"], 3)
+        old_rows = [{k: v for k, v in r.items() if k != "in_flight"} for r in rows]
+        self.assertEqual(I.metrics_from(old_rows, positions)["in_flight_max"], 0)
         m = I.metrics_from(rows + [row("s1", None, error="HTTP 500")], positions)
         self.assertEqual(m["failed"], 1)
         self.assertFalse(I.test_complete(m))

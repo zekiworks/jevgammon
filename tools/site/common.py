@@ -73,7 +73,9 @@ EARLIER_NOTE = ("Earlier version: plays were listed in the runner's order, which
 # published file (pages, JSON downloads, decision files); the pre-deploy check scans every file for these.
 BANNED = re.compile(r"192\.168\.|127\.0\.0|\b10\.\d{1,3}\.\d{1,3}\.\d{1,3}\b|\b172\.(?:1[6-9]|2\d|3[01])\.\d|localhost|"
                     r"https?://[\w.-]+:\d{2,5}|/home/|/root/|/mnt/|bariton|spark-|\bsk-[\w-]{8}|base_url|"
-                    r"api[_-]key|Bearer [\w.-]{8}|[Aa]uthorization:|x-api-key|decision-models")
+                    r"api[_-]key|Bearer [\w.-]{16}|[Aa]uthorization:|x-api-key|decision-models")
+assert BANNED.search("Bearer abcdefghijklmnop")
+assert not BANNED.search("Bearer attempts need a clear, calculated gamble")
 
 # The suite strip at the top of every page (Ümit, bus #2270; the shared component of the Decision models site, #2290):
 # content/suite-bar.html is its snippet, copied verbatim; this site marks its own link (Backgammon) as the current page.

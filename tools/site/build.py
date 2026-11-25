@@ -508,6 +508,24 @@ def preview_redirects(out: Path, target: Path) -> None:
 <body><p>This page moved to <a href="{url}">{url}</a>.</p></body></html>
 """)
 
+ATLAS_BACKGAMMON = "https://zekiworks.github.io/analysis/?v=2&ui=en&section=Backgammon"
+ATLAS_LEARNING = ATLAS_BACKGAMMON + "&panel=Learning&track=Learning+%C2%B7+Own+lessons"
+ATLAS_LEARNING_PILOT = ATLAS_BACKGAMMON + "&panel=Learning+pilot"
+
+
+def close_old_pages(out: Path) -> None:
+    """Close the superseded standalone site while leaving its machine-readable data available to Model Atlas."""
+    for page in out.rglob("index.html"):
+        rel = page.parent.relative_to(out).as_posix()
+        url = ATLAS_LEARNING if rel == "improve" or rel.startswith("improve/") else (
+            ATLAS_LEARNING_PILOT if rel == "learning" or rel.startswith("learning/") else ATLAS_BACKGAMMON)
+        page.write_text(f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="robots" content="noindex">
+<title>Moved to Model Atlas</title><link rel="canonical" href="{url}"><meta http-equiv="refresh" content="0; url={url}">
+<script>location.replace({json.dumps(url)});</script></head>
+<body><p>This page moved to <a href="{url}">Model Atlas</a>.</p></body></html>
+""")
+
+
 
 def main():
     ap = argparse.ArgumentParser()
@@ -560,6 +578,9 @@ def main():
         for f in failures[:40]:
             print(" -", f, file=sys.stderr)
         sys.exit(2)
+    # Ümit #16861/#16866: Model Atlas is the only reader-facing site. Keep data files for its exporter, but every old
+    # standalone HTML address redirects to Atlas after the old pages have passed their source-data checks.
+    close_old_pages(out)
     report.unlink(missing_ok=True)
     print(json.dumps(dict(results=S["hash"], data_as_of=S["as_of"], decision_files=S["decision_files"],
                           scored={lg["dataset"]: lg["scored"] for lg in S["leagues"]})))

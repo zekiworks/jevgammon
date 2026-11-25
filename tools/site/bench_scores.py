@@ -123,15 +123,18 @@ def _checkpoint(m: dict) -> tuple[str | None, str | None, str | None]:
     return hit.group(1), hit.group(2), q.group(1).upper() if q else None
 
 
-def _improvement(S, group: list) -> tuple[float | None, str | None]:
-    """(the change in risks found (percentage points, lessons minus no memory) of the row's setup in "Did they
-    improve?", once it has a verdict; that model's key), or (None, None)."""
+def _improvement(S, row: dict, group: list) -> tuple[float | None, str | None]:
+    """(the change in risks found (percentage points, lessons minus no memory) of the leaderboard row's setup in
+    "Did they improve?", once it has a verdict; that model's key), or (None, None). Where several settings of one model
+    have verdicts, use the leaderboard row's exact setup rather than assigning another setting's result to it."""
     names = {x["name"] for x in group}
     done = [m for m in ((S["improve"].get("results") or {}).get("models") or [])
             if m["setup"] in names and m["verdict"] and m["change"]["risks_found"] is not None]
-    if len(done) > 1:
+    exact = [m for m in done if m["setup"] == row["name"]]
+    chosen = exact or done
+    if len(chosen) > 1:
         raise ValueError(f"bench-scores: several 'Did they improve?' verdicts for one row: {sorted(names)}")
-    return (done[0]["change"]["risks_found"], done[0]["key"]) if done else (None, None)
+    return (chosen[0]["change"]["risks_found"], chosen[0]["key"]) if chosen else (None, None)
 
 
 def randoms(prog_rows) -> dict[int, float]:
@@ -160,7 +163,7 @@ def build(S) -> dict:
         q = x["q"] or {}
         p = P.PARAMS[x["model"]]
         repo, commit, quant = _checkpoint(m)
-        imp, imp_key = _improvement(S, group)
+        imp, imp_key = _improvement(S, x, group)
         lg = league_of(x)
         notes = [f"League {lg}", CALIBRATION_NOTE]
         if x["late"]:

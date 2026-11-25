@@ -46,8 +46,8 @@ BASE = "https://zekiworks.github.io/analysis/backgammon/"
 # The files of tools/site/assets/ copied to the site's root (hilde-leaf-transparent.png: the header mark; hilde-bench-icon*: the suite's own tab icon, byte-identical from turkce's ~/code/atlas/site, Ümit #11630, turkce #11677; formerly the Reader's favicon/apple-touch
 # PNGs: Hilde Reader's mark, byte-identical from zekiworks/hilde dd56ed2f, Ümit #10114).
 ASSETS = ("site.css", "site.js", "tables.js", "png.js", "bg.css", "suite-bar.css", "bg.js",
-          "decisions.css", "decisions.js", "hilde-leaf-transparent.png", "hilde-bench-icon.svg",
-          "hilde-bench-icon-16.png", "hilde-bench-icon-32.png", "hilde-bench-icon-180.png", "zw-ui.css", "zw-ui.js")
+          "hilde-leaf-transparent.png", "hilde-bench-icon.svg", "hilde-bench-icon-16.png",
+          "hilde-bench-icon-32.png", "hilde-bench-icon-180.png", "zw-ui.css", "zw-ui.js")
 # The Zeki Works bench kit (turkce, zw-ui v2.7 from tb-next 5d5bc0d5c; Zeki #4879, #9130): zw_ui.py writes the
 # leaderboard's and the /improve/ results block, zw-ui.css and zw-ui.js paint and run it. Copied byte for byte, never
 # edited here: the build fails unless each file is the shared kit's (its sha256), as the suite strip and the maker
@@ -547,6 +547,8 @@ def main():
     if S["image"] is None:
         old = sorted((out / "share").glob("preview-*.png")) if (out / "share").exists() else []
         S["image"] = f"share/{old[0].name}" if old else None
+    for stale in ("decisions.css", "decisions.js"):
+        (out / stale).unlink(missing_ok=True)
     for name in ASSETS:
         if (SITE / "assets" / name).exists():
             shutil.copy(SITE / "assets" / name, out / name)

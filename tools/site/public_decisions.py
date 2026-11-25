@@ -1,24 +1,21 @@
-"""The "Every decision" page (brief B5): every scored decision, page by page, as the model saw it.
+"""The decision evidence consumed by Model Atlas: every scored decision, page by page, as the model saw it.
 
     export(out, snap, plays_dir, prompts_db, replay_db, v1_positions, datasets) -> counts per dataset and setup
-    body() -> the inner HTML of <main> for decisions/index.html
 
 Writes, under out/decisions/:
     index.json                                  datasets, their status and setups (name, slug, decisions, invalid, pages,
                                                 risk: decisions per B6 class)
-    <dataset>/<setup slug>/risk.json.gz         [page, id, class, risk call, band, close] per decision, so Every decision can
-                                                filter by Risk pays / Safety pays / No hit-risk trade-off and by close choice
-                                                (1 close choice, 0 eligible but not, null not eligible) without loading pages
+    <dataset>/<setup slug>/risk.json.gz         [page, id, class, risk call, band, close] per decision, so Atlas can
+                                                filter by Risk pays / Safety pays / No hit-risk trade-off and close choice
+                                                without loading the decision pages
     <dataset>/<setup slug>/<page>.json.gz       PAGE_SIZE decisions per page, pages numbered from 1 (gzip, mtime 0, so an
                                                 unchanged page is byte-identical from one build to the next)
     contexts/<hash>.txt                         the shared rules text of the prompts (hash = sha256(text)[:12])
 
 League decisions are the scored ones (STATE/plays, tools/site/score_plays.py) joined with the snapshot's turns and
 STATE/prompts.db; decisions not scored yet are not exported. The v1 set is one decision per (position, v1 model) of
-replay.db. Plays are listed in the order the model was shown them; the viewer is assets/decisions.js.
-
-Ümit #16875 and Jack #16895: keep this evidence public until Model Atlas has an equivalent for every decision,
-per-phase table and per-model decision list; only then may the standalone evidence pages redirect.
+replay.db. Plays are listed in the order the model was shown them. Atlas parity was approved after Ümit's no-loss
+requirement in #16875 and Jack's field-level parity report in #16949; the old HTML page only translates deep links.
 """
 
 import gzip
@@ -391,20 +388,3 @@ def export(out: Path, snap: Path, plays_dir: Path, prompts_db: Path, replay_db: 
                                                 separators=(",", ":")))
     return result
 
-
-def body() -> str:
-    return f"""<section class="card hero page-head">
-<p class="eyebrow">Every decision</p>
-<h1>What did each model see, and what did it play?</h1>
-</section>
-<div id="dec-controls" class="panel dec-controls" hidden></div>
-<noscript><p class="note">This page loads its decisions on demand with JavaScript. The same data is in
-<code>decisions/index.json</code> and the gzip-compressed JSON page files listed there.</p></noscript>
-<p id="dec-status" class="note" role="status"></p>
-<div id="dec-list" class="dec-list"></div>
-<nav id="dec-pager-bottom" class="dec-pager" aria-label="Pages" hidden></nav>
-<details class="about"><summary>About this page</summary><p>Every scored decision, {PAGE_SIZE} to a page: the board,
-the position exactly as the model saw it, every legal play with its consequences, the engine's equity for each play, the
-equity the chosen play lost and the model's probability where it gives one. Click a column header to sort a play
-table.</p></details>
-"""

@@ -97,7 +97,8 @@ def improve_card(S) -> dict:
                       "threshold while right safety drops by no more than the plan allows; an operational threshold, not "
                       "a statistical test. The other models are still running; their numbers are not results yet."),
                 line=f"Risks found before \u2192 after, finished models: {line}" if done else
-                "No model has finished yet: every model is still running.",
+                num(count(len(L["plan"]["models"])), src, ["plan", "models"], "len")
+                + " models registered; no accepted result is available yet.",
                 link=(IP.PATH, "Did they improve?"))
 
 

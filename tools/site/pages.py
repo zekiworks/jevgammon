@@ -2077,16 +2077,21 @@ def about_page(S, method_html: str) -> str:
             + "".join(f'<section class="card" id="{i}"><h2>{esc(t)}</h2>{parts[i]}</section>' for i, t in more))
 
 
-# The Decisions tab's other pages (Ümit #2938 item 1): linked under its first card.
-DECISION_PAGES = [("disagreements/", "Where models disagree"), ("phases/", "Phases"), ("compare/", "Compare")]
+ATLAS_DECISIONS = "https://zekiworks.github.io/analysis/?section=Backgammon&panel=Decisions"
 
 
-def decisions_page(S, body: str) -> str:
-    links = ('<nav class="face-nav decisions-links" aria-label="More on decisions">'
-             + "".join(f'<a href="../{h}">{esc(t)}</a>' for h, t in DECISION_PAGES) + '</nav>')
-    head_end = body.index("</section>") + len("</section>")
-    return (body[:head_end] + links + body[head_end:]
-            + f'<p class="version version-line">{esc(version_line(S))}</p>')
+def decisions_redirect() -> str:
+    """The Atlas browser has field-level parity; translate every old decision deep link into its Atlas equivalent."""
+    return f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="robots" content="noindex">
+<title>Moved to Model Atlas</title><link rel="canonical" href="{esc(ATLAS_DECISIONS)}">
+<meta http-equiv="refresh" content="0; url={esc(ATLAS_DECISIONS)}"></head><body>
+<p>This browser moved to <a href="{esc(ATLAS_DECISIONS)}">Model Atlas</a>.</p>
+<script>const target=new URL({json.dumps(ATLAS_DECISIONS)}),old=new URLSearchParams(location.search);
+for(const [from,to] of [["d","dd"],["s","ds"],["p","dp"],["r","dr"],["c","dc"],["b","db"],["k","dk"]]){{
+  const value=old.get(from); if(value) target.searchParams.set(to,value);
+}}
+location.replace(target+location.hash);</script></body></html>
+"""
 
 
 def share_card(S) -> str:
@@ -2112,7 +2117,6 @@ def description(S) -> str:
 # --- Write ----------------------------------------------------------------------------------------------------
 
 def write_all(S, out: Path, base: str) -> None:
-    import public_decisions
     import home
     import method
     S["description"] = description(S)
@@ -2184,8 +2188,9 @@ def write_all(S, out: Path, base: str) -> None:
     for path, title, body in improve_page.registration_pages(S["improve"]):
         put(path, title, body, dataset="improve")
     put("data/", "Data", data_page(S, out))
-    put("decisions/", "Every decision", decisions_page(S, public_decisions.body()),
-        scripts=("decisions.js",), styles=("decisions.css",))
+    decision_page = out / "decisions/index.html"
+    decision_page.parent.mkdir(parents=True, exist_ok=True)
+    decision_page.write_text(decisions_redirect())
     put("highlights/", "Highlights", highlights_page(S),
         description="Highlights of the backgammon benchmark: findings the site already shows, each with its numbers.")
     put("experiments/", "Experiments", experiments_page(S),

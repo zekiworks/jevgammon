@@ -1010,17 +1010,20 @@ def run(S: dict, out: Path) -> list[str]:
 
 
 def check_decision_evidence(out: Path) -> list[str]:
-    """The public evidence browser has every setup's declared pages and a readable decision payload."""
+    """The Atlas data contract stays complete, and the retired browser preserves every old deep link in its redirect."""
     index_path = out / "decisions/index.json"
     page = out / "decisions/index.html"
-    assets = [out / "decisions.js", out / "decisions.css"]
-    missing = [str(p.relative_to(out)) for p in [index_path, page, *assets] if not p.is_file()]
+    missing = [str(p.relative_to(out)) for p in [index_path, page] if not p.is_file()]
     if missing:
         return [f"decision evidence: missing {', '.join(missing)}"]
     html = page.read_text()
     bad = []
-    if "What did each model see, and what did it play?" not in html or "decisions.js" not in html:
-        bad.append("decisions/index.html: public decision browser is not wired")
+    if "panel=Decisions" not in html:
+        bad.append("decisions/index.html: does not redirect to Atlas Decisions")
+    for source, target in (("d", "dd"), ("s", "ds"), ("p", "dp"), ("r", "dr"), ("c", "dc"),
+                           ("b", "db"), ("k", "dk")):
+        if f'["{source}","{target}"]' not in html:
+            bad.append(f"decisions/index.html: old {source} deep links do not map to Atlas {target}")
     doc = json.loads(index_path.read_text())
     datasets = doc.get("datasets") or []
     if not datasets:
@@ -1044,6 +1047,9 @@ def check_decision_evidence(out: Path) -> list[str]:
                 bad.append(f"{expected[0].relative_to(out)}: no complete decision record")
             if not (root / "risk.json.gz").is_file():
                 bad.append(f"decisions/index.json: {dataset['id']}/{setup['name']} missing risk index")
+    for stale in ("decisions.js", "decisions.css"):
+        if (out / stale).exists():
+            bad.append(f"{stale}: retired standalone-browser asset remains")
     return bad
 
 

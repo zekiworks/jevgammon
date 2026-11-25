@@ -1,6 +1,6 @@
-//! Chat-model players: OpenAI, Anthropic, Google Antigravity and xAI subscriptions, Gemini API
-//! keys, and OpenAI-compatible servers (SGLang, vLLM, Ollama, paid providers). All get
-//! Cygnet's letter prompt (`prompt::letter_user`), the options lettered in the seeded order.
+//! Chat-model players: OpenAI, Anthropic, Google Antigravity, xAI and Kimi subscriptions,
+//! Gemini API keys, and OpenAI-compatible servers (SGLang, vLLM, Ollama, paid providers).
+//! All get Cygnet's letter prompt (`prompt::letter_user`), the options lettered in the seeded order.
 //!
 //! OpenAI-compatible servers return letter probabilities: with reasoning on, request 1 lets
 //! the model reason (its answer constrained to the option letters); request 2 sends the
@@ -31,6 +31,8 @@ const CODEX_URL: &str = "https://chatgpt.com/backend-api/codex/responses";
 const ANTHROPIC_URL: &str = "https://api.anthropic.com/v1/messages";
 /// xAI's Responses API, which takes OMP's `xai-oauth` subscription token.
 const XAI_URL: &str = "https://api.x.ai/v1/responses";
+/// Moonshot's OpenAI-compatible endpoint for OMP's Kimi Code subscription.
+const KIMI_URL: &str = "https://api.kimi.com/coding/v1/chat/completions";
 const GEMINI_URL: &str = "https://generativelanguage.googleapis.com/v1beta";
 /// Cloud Code Assist endpoints serving Antigravity, in OMP's order (the production
 /// `cloudcode-pa` host answers Antigravity requests with Gemini CLI's quota: 429).
@@ -190,6 +192,8 @@ enum Kind {
     Antigravity(Arc<Credentials>),
     /// Grok through the xAI subscription (OMP's login) on xAI's Responses API.
     Xai(Arc<Credentials>),
+    /// Kimi through the OpenAI-compatible Kimi Code subscription endpoint (OMP's login).
+    Kimi(Arc<Credentials>),
     OpenAiCompatible {
         base_url: String,
         api_key: Option<String>,
@@ -260,6 +264,7 @@ pub enum Answer {
 pub enum Route {
     OpenAiSubscription,
     Xai,
+    Kimi,
     AnthropicSubscription,
     Gemini,
     /// Gemini's request inside a Cloud Code Assist envelope (model and project added at send).
@@ -272,6 +277,7 @@ impl Route {
         match self {
             Route::OpenAiSubscription => "openai-subscription (Codex Responses API)",
             Route::Xai => "xai-subscription (Responses API)",
+            Route::Kimi => "kimi-code-subscription (chat completions)",
             Route::AnthropicSubscription => "anthropic-subscription (Messages API)",
             Route::Gemini => "gemini-api (generateContent)",
             Route::Antigravity => {
@@ -287,6 +293,7 @@ impl Kind {
         match self {
             Kind::OpenAiSubscription(_) => Route::OpenAiSubscription,
             Kind::Xai(_) => Route::Xai,
+            Kind::Kimi(_) => Route::Kimi,
             Kind::AnthropicSubscription(_) => Route::AnthropicSubscription,
             Kind::Gemini(_) => Route::Gemini,
             Kind::Antigravity(_) => Route::Antigravity,
@@ -434,7 +441,7 @@ pub fn constrained_request(
                 "generationConfig": config,
             })
         }
-        Route::OpenAiCompatible => {
+        Route::Kimi | Route::OpenAiCompatible => {
             let mut body = json!({
                 "model": model,
                 "messages": [
@@ -517,7 +524,7 @@ pub fn free_text_request(route: Route, model: &str, options: &Options, system: &
                 "generationConfig": config,
             })
         }
-        Route::OpenAiCompatible => {
+        Route::Kimi | Route::OpenAiCompatible => {
             let mut body = json!({
                 "model": model,
                 "messages": [
@@ -627,6 +634,14 @@ impl LlmClient {
         options: Options,
     ) -> Self {
         Self::new(http, model, Kind::Xai(creds), options)
+    }
+    pub fn kimi(
+        http: reqwest::Client,
+        model: String,
+        creds: Arc<Credentials>,
+        options: Options,
+    ) -> Self {
+        Self::new(http, model, Kind::Kimi(creds), options)
     }
 
     pub fn openai_compatible(
@@ -1071,6 +1086,29 @@ impl LlmClient {
                         other => {
                             let raw = other?;
                             let completion = parse_xai(&raw)?;
+                            return Ok((raw, completion));
+                        }
+                    }
+                }
+            }
+            Kind::Kimi(creds) => {
+                let mut token = creds.token().await?;
+                let mut refreshed = false;
+                loop {
+                    let request = || {
+                        self.http
+                            .post(KIMI_URL)
+                            .bearer_auth(&token.access)
+                            .json(body)
+                    };
+                    match http::send(request, retry, self.guard()).await {
+                        Err(CallError::Auth(_)) if !refreshed => {
+                            token = creds.refresh_after_rejection(&token.access).await?;
+                            refreshed = true;
+                        }
+                        other => {
+                            let raw = other?;
+                            let completion = parse_chat_completion(&raw)?;
                             return Ok((raw, completion));
                         }
                     }
@@ -1924,6 +1962,7 @@ mod tests {
         let routes = [
             (Route::OpenAiSubscription, Some("high"), "/text/format"),
             (Route::Xai, Some("low"), "/text/format"),
+            (Route::Kimi, Some("high"), "/response_format"),
             (
                 Route::AnthropicSubscription,
                 Some("high"),

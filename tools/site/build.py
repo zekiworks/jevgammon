@@ -534,6 +534,7 @@ def main():
     ap.add_argument("--no-image", action="store_true")
     ap.add_argument("--preview-redirects", metavar="DIR",
                     help="write a redirect to the live address for every page of the build into DIR (the old preview path)")
+    ap.add_argument("--keep-standalone-for-export", action="store_true", help=argparse.SUPPRESS)
     args = ap.parse_args()
     check_kit()
     out = Path(args.out).expanduser()
@@ -579,8 +580,10 @@ def main():
             print(" -", f, file=sys.stderr)
         sys.exit(2)
     # Ümit #16861/#16866: Model Atlas is the only reader-facing site. Keep data files for its exporter, but every old
-    # standalone HTML address redirects to Atlas after the old pages have passed their source-data checks.
-    close_old_pages(out)
+    # standalone HTML address redirects to Atlas after the old pages have passed their source-data checks. The exporter
+    # may build checked source pages into a non-published branch because some legacy mappers still read their tables.
+    if not args.keep_standalone_for_export:
+        close_old_pages(out)
     report.unlink(missing_ok=True)
     print(json.dumps(dict(results=S["hash"], data_as_of=S["as_of"], decision_files=S["decision_files"],
                           scored={lg["dataset"]: lg["scored"] for lg in S["leagues"]})))

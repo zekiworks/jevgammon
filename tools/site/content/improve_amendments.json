@@ -190,7 +190,8 @@
      "setup": "Qwen4 Max (high)",
      "maker": "Qwen",
      "setting": "reasoning high; High phase",
-     "route": "OpenRouter; Alibaba endpoint pinned before first call"
+     "route": "OpenRouter; Alibaba endpoint pinned before first call",
+     "billed": true
     },
     {
      "setup": "Hy4 (high)",

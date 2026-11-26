@@ -246,8 +246,8 @@ def read_plan(path: Path) -> dict:
             if any(x["setup"] == m["setup"] for x in models):
                 raise SystemExit(f"content/improve_amendments.json: {m['setup']} is already a plan model")
             models.append(dict(n=len(models) + 1, setup=m["setup"], label="", late_entry=False, maker=m["maker"],
-                               setting=m["setting"], route=m["route"], route_detail="", billed=False,
-                               status=f"added {a['at']} (amendment)",
+                               setting=m["setting"], route=m["route"], route_detail="",
+                               billed=m.get("billed", False), status=f"added {a['at']} (amendment)",
                                key=re.sub(r"[^a-z0-9.]+", "-", m["setup"].lower()).strip("-")))
     return dict(file=path.name, title=title, commitment=COMMITMENT,
                 sha256=hashlib.sha256(text.encode()).hexdigest(), sections=sections, redacted=redacted,

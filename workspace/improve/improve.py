@@ -1559,7 +1559,8 @@ def bind_plan(key):
 
 
 def bin_commit():
-    return BIN.name.split("-", 1)[1] if BIN.name.startswith("jevgammon-") else None
+    m = re.fullmatch(r"jevgammon-([0-9a-f]{7,40})(?:-[A-Za-z0-9._-]+)?", BIN.name)
+    return m.group(1) if m else None
 
 
 def binary_identity():
@@ -1840,6 +1841,23 @@ def public_reason(reason):
     return (out[:200] or "unspecified")
 
 
+def public_test(t):
+    """A stored test's public fields. Older pinned runners did not record concurrency; a completed test necessarily
+    had at least one request in flight, so their zero means unknown and its conservative lower bound is one."""
+    out = {k: t[k] for k in TEST_KEYS}
+    out["in_flight_max"] = max(1, out["in_flight_max"])
+    return out
+
+
+def public_runner_pin(binary):
+    """Normalize an old descriptive binary suffix while retaining its commit and exact binary hash."""
+    commit = binary.get("commit")
+    if isinstance(commit, str):
+        m = re.fullmatch(r"([0-9a-f]{7,40})(?:-[A-Za-z0-9._-]+)?", commit)
+        commit = m.group(1) if m else commit
+    return dict(commit=commit, sha256=binary.get("sha256"))
+
+
 def model_summary(key):
     m = MODELS[key]
     state, reason = model_state(key)
@@ -1848,7 +1866,7 @@ def model_summary(key):
         f = step_dir(key, step) / "aggregate.json"
         if f.exists():
             t = json.loads(f.read_text())["test"]
-            empty.append({k: t[k] for k in TEST_KEYS})
+            empty.append(public_test(t))
     series = []
     for s in range(1, SERIES + 1):
         f = step_dir(key, f"S{s}") / "aggregate.json"
@@ -1859,14 +1877,14 @@ def model_summary(key):
                            game_decisions=a["game_decisions"], game_invalid=a["game_invalid"],
                            lesson_calls=a["lesson_calls"], lessons_cut=a["lessons_cut"],
                            lessons_empty=a["lessons_empty"], restarts=a["restarts"], lessons=a["lessons"],
-                           t10={k: a["t10"][k] for k in TEST_KEYS}))
+                           t10=public_test(a["t10"])))
     settings = {} if DRY or ("settings" not in m and not has_setup(m["setup"])) else model_settings(key)
     route = settings.get("provider") or m["lane"]
     # The runner pins its steps ran on (step_start's binary), in order of first use: the page can show each row's pin.
     runner = []
     for e in events(key):
         b = e.get("binary") if e["event"] == "step_start" else None
-        if b and (pin := dict(commit=b.get("commit"), sha256=b.get("sha256"))) not in runner:
+        if b and (pin := public_runner_pin(b)) not in runner:
             runner.append(pin)
     billed_history = bool(m.get("billed") or m.get("historically_billed"))
     return dict(key=key, setup=m["setup"], route=route, billed=billed_history, state=state,

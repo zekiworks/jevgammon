@@ -555,7 +555,9 @@ class Metrics(unittest.TestCase):
         self.assertEqual(m["answer_rate"], 1.5)  # 3 valid of 200
         self.assertEqual(m["in_flight_max"], 3)
         old_rows = [{k: v for k, v in r.items() if k != "in_flight"} for r in rows]
-        self.assertEqual(I.metrics_from(old_rows, positions)["in_flight_max"], 0)
+        old = I.metrics_from(old_rows, positions)
+        self.assertEqual(old["in_flight_max"], 0)
+        self.assertEqual(I.public_test({**old, "wall_seconds": 1})["in_flight_max"], 1)
         m = I.metrics_from(rows + [row("s1", None, error="HTTP 500")], positions)
         self.assertEqual(m["failed"], 1)
         self.assertFalse(I.test_complete(m))
@@ -787,8 +789,10 @@ class ValidityGate(Isolated):
     def test_the_export_names_each_rows_runner_pins(self):
         """Each exported row lists the pins its steps ran on (step_start's binary), once each, in order of first use."""
         self.assertEqual(I.model_summary("lfm3-1.7b-off")["runner"], [])
-        old, new = dict(commit="e417a0c", sha256="a" * 64), dict(commit="c32fedb", sha256="b" * 64)
-        for step, b in (("E1", new), ("S1", new), ("S2", old)):
+        old = dict(commit="e417a0c", sha256="a" * 64)
+        suffixed = dict(commit="c32fedb-kimi", sha256="b" * 64)
+        new = dict(commit="c32fedb", sha256="b" * 64)
+        for step, b in (("E1", suffixed), ("S1", suffixed), ("S2", old)):
             I.log("lfm3-1.7b-off", "step_start", step=step, gate=None, binary=dict(b, path="x", pinned=True))
         self.assertEqual(I.model_summary("lfm3-1.7b-off")["runner"], [new, old])
 
